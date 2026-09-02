@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive MapLibre map centered on the Bronx, New York." />
+  <title>DDRR Bronx Map</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="app">
+    <div id="map" aria-label="Interactive map of the Bronx"></div>
+
+    <section class="basemap-control" aria-label="Basemap selection">
+      <h1>DDRR Bronx</h1>
+      <fieldset>
+        <legend>Basemap</legend>
+        <label>
+          <input type="radio" name="basemap" value="streets" checked />
+          <span>Streets</span>
+        </label>
+        <label>
+          <input type="radio" name="basemap" value="satellite" />
+          <span>Satellite</span>
+        </label>
+      </fieldset>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="./main.js" defer></script>
+</body>
+</html>
