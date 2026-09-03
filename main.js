@@ -410,11 +410,12 @@ function applyNeighborhoodLabelVisibility() {
 }
 
 function getNeighborhoodLabelPaint() {
+  const isSatellite = currentBasemap === "satellite";
   return {
-    "text-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
-    "text-halo-color": currentBasemap === "satellite" ? "#000000" : "#ffffff",
-    "text-halo-width": 2.4,
-    "text-halo-blur": 0.2,
+    "text-color": isSatellite ? "rgba(255, 255, 255, 1)" : "#000000",
+    "text-halo-color": isSatellite ? "#000000" : "#ffffff",
+    "text-halo-width": isSatellite ? 1.6 : 2.4,
+    "text-halo-blur": isSatellite ? 0 : 0.2,
     "text-opacity": 1,
   };
 }
