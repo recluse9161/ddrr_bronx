@@ -40,9 +40,12 @@ class HomeControl {
   }
 }
 
-window.addEventListener("DOMContentLoaded", initializeMap);
+initializeApp().catch((error) => {
+  console.error("Map initialization failed:", error);
+  showMapError("Unable to initialize map. Check console and network access.");
+});
 
-function initializeMap() {
+async function initializeApp() {
   if (!window.maplibregl) {
     showMapError("MapLibre did not load. Check your internet connection or browser console.");
     return;
