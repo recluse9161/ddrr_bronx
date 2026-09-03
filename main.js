@@ -125,7 +125,7 @@ async function initializeApp() {
 
 
 async function loadNeighborhoodsData() {
-  const response = await fetch("./data/bronx_neighborhoods.geojson");
+  const response = await fetch(`./data/bronx_neighborhoods.geojson?v=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Unable to load Bronx neighborhoods: ${response.status}`);
   const data = await response.json();
   return {
