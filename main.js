@@ -8,6 +8,7 @@ const INITIAL_CENTER = [-73.8405, 40.8515];
 const INITIAL_ZOOM = 10.1;
 const FIT_OPTIONS = { padding: 36, duration: 0, maxZoom: 12 };
 const NEIGHBORHOODS_SOURCE_ID = "neighborhoods-source";
+const NEIGHBORHOODS_LABEL_SOURCE_ID = "neighborhoods-label-source";
 const NEIGHBORHOODS_FILL_LAYER_ID = "neighborhoods-fill";
 const NEIGHBORHOODS_OUTLINE_LAYER_ID = "neighborhoods-outline";
 const NEIGHBORHOODS_LABEL_LAYER_ID = "neighborhoods-label";
@@ -26,6 +27,7 @@ let currentBasemap = "streets";
 let flashingNeighborhoodName = "";
 let neighborhoodFlashTimeout = null;
 let neighborhoodsData = null;
+let neighborhoodLabelPointsData = null;
 let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
 
@@ -67,6 +69,7 @@ async function initializeApp() {
   }
 
   neighborhoodsData = await loadNeighborhoodsData();
+  neighborhoodLabelPointsData = buildNeighborhoodLabelPoints(neighborhoodsData);
 
   map = new maplibregl.Map({
     container: "map",
@@ -127,6 +130,114 @@ async function loadNeighborhoodsData() {
   };
 }
 
+function buildNeighborhoodLabelPoints(neighborhoodsGeoJson) {
+  const features = [];
+
+  (neighborhoodsGeoJson?.features || []).forEach((feature, index) => {
+    const props = feature?.properties || {};
+    const name = String(props.Name || "").trim();
+    if (!name) return;
+
+    const coordinates = getNeighborhoodLabelPointFromGeometry(feature?.geometry);
+    if (!coordinates) return;
+
+    features.push({
+      type: "Feature",
+      id: `neighborhood-label-${index + 1}`,
+      properties: {
+        Name: name,
+        LabelName: String(props.LabelName || name).trim(),
+      },
+      geometry: { type: "Point", coordinates },
+    });
+  });
+
+  return { type: "FeatureCollection", features };
+}
+
+function getNeighborhoodLabelPointFromGeometry(geometry) {
+  if (!geometry) return null;
+
+  if (geometry.type === "Polygon") {
+    return getPolygonLabelPoint(geometry.coordinates);
+  }
+
+  if (geometry.type === "MultiPolygon") {
+    const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    let largest = null;
+    let maxArea = -Infinity;
+
+    polygons.forEach((polygon) => {
+      const outerRing = Array.isArray(polygon) ? polygon[0] : null;
+      const area = Array.isArray(outerRing) ? Math.abs(getRingSignedArea(outerRing)) : 0;
+      if (area > maxArea) {
+        maxArea = area;
+        largest = polygon;
+      }
+    });
+
+    return largest ? getPolygonLabelPoint(largest) : null;
+  }
+
+  return null;
+}
+
+function getPolygonLabelPoint(polygonCoordinates) {
+  const outerRing = Array.isArray(polygonCoordinates) ? polygonCoordinates[0] : null;
+  if (!Array.isArray(outerRing) || outerRing.length < 4) return null;
+
+  const centroid = getRingCentroid(outerRing);
+  if (centroid) return centroid;
+  return getRingAveragePoint(outerRing);
+}
+
+function getRingSignedArea(ring) {
+  let area = 0;
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[i + 1];
+    area += x1 * y2 - x2 * y1;
+  }
+  return area / 2;
+}
+
+function getRingCentroid(ring) {
+  let signedAreaTimes2 = 0;
+  let cxAccumulator = 0;
+  let cyAccumulator = 0;
+
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[i + 1];
+    const cross = x1 * y2 - x2 * y1;
+    signedAreaTimes2 += cross;
+    cxAccumulator += (x1 + x2) * cross;
+    cyAccumulator += (y1 + y2) * cross;
+  }
+
+  if (Math.abs(signedAreaTimes2) < 1e-12) return null;
+  return [cxAccumulator / (3 * signedAreaTimes2), cyAccumulator / (3 * signedAreaTimes2)];
+}
+
+function getRingAveragePoint(ring) {
+  if (!Array.isArray(ring) || ring.length < 2) return null;
+
+  const end = ring.length - 1;
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+
+  for (let i = 0; i < end; i += 1) {
+    const [x, y] = ring[i];
+    sumX += x;
+    sumY += y;
+    count += 1;
+  }
+
+  if (!count) return null;
+  return [sumX / count, sumY / count];
+}
+
 function moveNeighborhoodLabelsToTop() {
   if (!map?.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) return;
   map.moveLayer(NEIGHBORHOODS_LABEL_LAYER_ID);
@@ -159,6 +270,13 @@ function installNeighborhoodLayers() {
       type: "geojson",
       data: neighborhoodsData,
       promoteId: "Name",
+    });
+  }
+
+  if (!map.getSource(NEIGHBORHOODS_LABEL_SOURCE_ID)) {
+    map.addSource(NEIGHBORHOODS_LABEL_SOURCE_ID, {
+      type: "geojson",
+      data: neighborhoodLabelPointsData,
     });
   }
 
@@ -201,7 +319,7 @@ function installNeighborhoodLayers() {
     map.addLayer({
       id: NEIGHBORHOODS_LABEL_LAYER_ID,
       type: "symbol",
-      source: NEIGHBORHOODS_SOURCE_ID,
+      source: NEIGHBORHOODS_LABEL_SOURCE_ID,
       layout: {
         "text-field": ["get", "LabelName"],
         "text-size": NEIGHBORHOOD_LABEL_TEXT_SIZE,

@@ -15,18 +15,18 @@
     <section class="basemap-control" aria-label="Map controls">
       <fieldset class="layer-control">
         <legend>Layers</legend>
-        <div class="legend-parent-row">
-          <label>
+        <div class="touch-row legend-parent-row" role="heading" aria-level="3">
+          <label class="legend-parent-label">
             <input id="toggleNeighborhoods" type="checkbox" checked />
             <span class="legend-swatch legend-swatch-neighborhoods" aria-hidden="true"></span>
-            <span>Neighborhoods</span>
+            <strong>Neighborhoods</strong>
           </label>
-          <div class="legend-child-row">
-            <label>
-              <input id="toggleNeighborhoodLabels" type="checkbox" checked />
-              <span>Name Label</span>
-            </label>
-          </div>
+        </div>
+        <div class="touch-subgroup" aria-label="Neighborhoods sublayers">
+          <label class="touch-row touch-row-child">
+            <input id="toggleNeighborhoodLabels" type="checkbox" checked />
+            <span>Name Label</span>
+          </label>
         </div>
         <label>
           <input id="toggleSightings" type="checkbox" checked />
