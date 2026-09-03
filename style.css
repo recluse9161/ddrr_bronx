@@ -162,22 +162,26 @@ body {
 
 .legend-parent-row {
   margin-bottom: 0;
-  min-height: 38px;
+  min-height: 30px;
 }
 
 .legend-parent-label {
-  min-height: 38px;
+  min-height: 30px;
 }
 
 .touch-subgroup {
-  margin: 0 0 6px 30px;
-  padding-left: 8px;
+  margin: -2px 0 6px 38px;
+  padding-left: 10px;
   border-left: 1px dashed rgba(15, 23, 42, 0.2);
 }
 
 .touch-row-child {
-  min-height: 30px;
+  min-height: 24px;
   padding-top: 1px;
   padding-bottom: 1px;
   font-size: 0.9rem;
+}
+
+.touch-row-child input {
+  margin-left: 0;
 }

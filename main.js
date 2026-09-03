@@ -13,7 +13,8 @@ const NEIGHBORHOODS_FILL_LAYER_ID = "neighborhoods-fill";
 const NEIGHBORHOODS_OUTLINE_LAYER_ID = "neighborhoods-outline";
 const NEIGHBORHOODS_LABEL_LAYER_ID = "neighborhoods-label";
 const NEIGHBORHOODS_CLICK_FILL_LAYER_ID = "neighborhoods-click-fill";
-const NEIGHBORHOOD_LABEL_TEXT_SIZE = ["interpolate", ["linear"], ["zoom"], 9, 11, 11, 14, 13, 18];
+// Neighborhood name label size. Edit these zoom stops to make labels larger/smaller.
+const NEIGHBORHOOD_LABEL_TEXT_SIZE = ["interpolate", ["linear"], ["zoom"], 9, 9, 11, 11, 13, 14];
 const NEIGHBORHOOD_LABEL_FONT_STACK = ["Noto Sans Regular"];
 const SIGHTINGS_SOURCE_ID = "sightings-source";
 const SIGHTINGS_HEATMAP_LAYER_ID = "confirmed-sightings-heatmap";
