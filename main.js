@@ -103,8 +103,8 @@ async function initializeApp() {
     installSightingsLayer();
     installSchoolsLayer();
     updateNeighborhoodLabelPaint();
+    moveSchoolsBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
-    moveSchoolsToTop();
   });
 
   document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
@@ -277,15 +277,16 @@ function switchBasemap(nextBasemap) {
     updateNeighborhoodLabelPaint();
     applySightingsVisibility();
     applySchoolsVisibility();
+    moveSchoolsBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
-    moveSchoolsToTop();
   });
 }
 
-function moveSchoolsToTop() {
+function moveSchoolsBelowNeighborhoodLabels() {
   if (!map?.getLayer(SCHOOLS_LAYER_ID)) return;
-  if (map.getLayer(SCHOOLS_HIT_LAYER_ID)) map.moveLayer(SCHOOLS_HIT_LAYER_ID);
-  map.moveLayer(SCHOOLS_LAYER_ID);
+  const beforeLayerId = map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID) ? NEIGHBORHOODS_LABEL_LAYER_ID : undefined;
+  if (map.getLayer(SCHOOLS_HIT_LAYER_ID)) map.moveLayer(SCHOOLS_HIT_LAYER_ID, beforeLayerId);
+  map.moveLayer(SCHOOLS_LAYER_ID, beforeLayerId);
 }
 
 
@@ -590,7 +591,7 @@ function applySchoolsVisibility() {
   [SCHOOLS_LAYER_ID, SCHOOLS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
-  if (visibility === "visible") moveSchoolsToTop();
+  if (visibility === "visible") moveSchoolsBelowNeighborhoodLabels();
 }
 
 function showSchoolPopup(event) {
