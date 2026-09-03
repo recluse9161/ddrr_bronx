@@ -65,6 +65,7 @@ const SIGHTINGS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 8
 let map;
 let currentBasemap = "streets";
 let selectedNeighborhoodName = null;
+let neighborhoodsData = null;
 let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
 
@@ -105,6 +106,8 @@ async function initializeApp() {
     return;
   }
 
+  neighborhoodsData = await loadNeighborhoodsData();
+
   map = new maplibregl.Map({
     container: "map",
     style: getBasemapStyle("streets"),
@@ -124,6 +127,7 @@ async function initializeApp() {
     fitToBronx(false);
     installNeighborhoodLayers();
     installSightingsLayer();
+    moveNeighborhoodLabelsToTop();
   });
 
   document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
@@ -135,6 +139,33 @@ async function initializeApp() {
 
   document.getElementById("toggleNeighborhoods")?.addEventListener("change", applyNeighborhoodVisibility);
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
+}
+
+
+async function loadNeighborhoodsData() {
+  const response = await fetch("./data/bronx_neighborhoods.geojson");
+  if (!response.ok) throw new Error(`Unable to load Bronx neighborhoods: ${response.status}`);
+  const data = await response.json();
+  return {
+    ...data,
+    features: (data.features || []).map((feature) => {
+      const properties = feature.properties || {};
+      const name = String(properties.Name || "");
+      return {
+        ...feature,
+        properties: {
+          ...properties,
+          // Precompute wrapped labels instead of relying on a MapLibre string replace expression.
+          LabelName: name.replaceAll("-", "\n"),
+        },
+      };
+    }),
+  };
+}
+
+function moveNeighborhoodLabelsToTop() {
+  if (!map?.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) return;
+  map.moveLayer(NEIGHBORHOODS_LABEL_LAYER_ID);
 }
 
 function switchBasemap(nextBasemap) {
@@ -149,8 +180,10 @@ function switchBasemap(nextBasemap) {
   map.once("style.load", () => {
     installNeighborhoodLayers();
     installSightingsLayer();
+    moveNeighborhoodLabelsToTop();
     applyNeighborhoodVisibility();
     applySightingsVisibility();
+    moveNeighborhoodLabelsToTop();
   });
 }
 
@@ -159,7 +192,7 @@ function installNeighborhoodLayers() {
   if (!map.getSource(NEIGHBORHOODS_SOURCE_ID)) {
     map.addSource(NEIGHBORHOODS_SOURCE_ID, {
       type: "geojson",
-      data: "./data/bronx_neighborhoods.geojson",
+      data: neighborhoodsData,
       promoteId: "Name",
     });
   }
@@ -205,7 +238,7 @@ function installNeighborhoodLayers() {
       type: "symbol",
       source: NEIGHBORHOODS_SOURCE_ID,
       layout: {
-        "text-field": ["replace", ["to-string", ["get", "Name"]], "-", "\n"],
+        "text-field": ["get", "LabelName"],
         "text-size": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName || ""]], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE],
         "text-font": NEIGHBORHOOD_LABEL_FONT_STACK,
         "text-anchor": "center",
