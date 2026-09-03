@@ -8,8 +8,11 @@ const INITIAL_CENTER = [-73.8405, 40.8515];
 const INITIAL_ZOOM = 10.1;
 const FIT_OPTIONS = { padding: 36, duration: 0, maxZoom: 12 };
 const SIGHTINGS_SOURCE_ID = "sightings-source";
-const SIGHTINGS_LAYER_ID = "sightings-points";
-const SIGHTINGS_HIT_LAYER_ID = "sightings-hit-area";
+const SIGHTINGS_HEATMAP_LAYER_ID = "confirmed-sightings-heatmap";
+const SIGHTINGS_LAYER_ID = "confirmed-sightings";
+const SIGHTINGS_HIT_LAYER_ID = "confirmed-sightings-interaction";
+const SIGHTINGS_POINT_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 7, 18, 10];
+const SIGHTINGS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 8, 14, 11, 18, 14];
 
 let map;
 let sightingHandlersInstalled = false;
@@ -92,14 +95,50 @@ function installSightingsLayer() {
     });
   }
 
+  if (!map.getLayer(SIGHTINGS_HEATMAP_LAYER_ID)) {
+    map.addLayer({
+      id: SIGHTINGS_HEATMAP_LAYER_ID,
+      type: "heatmap",
+      source: SIGHTINGS_SOURCE_ID,
+      paint: {
+        // Exact same merged-hotspot style used by the original DDRR map.
+        "heatmap-weight": ["interpolate", ["linear"], ["zoom"], 10, 0.9, 13, 1.1, 15, 1.3],
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 1.2, 13, 1.7, 15, 2.1],
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 10, 12, 13, 14, 16, 15, 18],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0, 0, 0, 0)",
+          0.12,
+          "rgba(185, 28, 28, 0.35)",
+          0.3,
+          "rgba(220, 38, 38, 0.82)",
+          0.55,
+          "rgba(220, 38, 38, 0.96)",
+          0.78,
+          "rgba(239, 68, 68, 1)",
+          0.92,
+          "rgba(255, 214, 10, 1)",
+          1,
+          "rgba(255, 249, 138, 1)",
+        ],
+        "heatmap-opacity": 0.96,
+      },
+    });
+  }
+
   if (!map.getLayer(SIGHTINGS_LAYER_ID)) {
     map.addLayer({
       id: SIGHTINGS_LAYER_ID,
       type: "circle",
       source: SIGHTINGS_SOURCE_ID,
+      // Keep points effectively hidden; hotspot remains the primary visualization.
+      minzoom: 24,
       paint: {
         "circle-color": "#dc2626",
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 7, 18, 10],
+        "circle-radius": SIGHTINGS_POINT_RADIUS,
         "circle-stroke-color": "#7f1d1d",
         "circle-stroke-width": 2.2,
         "circle-opacity": 0.95,
@@ -114,7 +153,7 @@ function installSightingsLayer() {
       source: SIGHTINGS_SOURCE_ID,
       paint: {
         "circle-color": "#000000",
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 8, 14, 11, 18, 14],
+        "circle-radius": SIGHTINGS_INTERACTION_RADIUS,
         "circle-opacity": 0,
         "circle-stroke-width": 0,
       },
@@ -141,7 +180,7 @@ function installSightingHandlers() {
 function applySightingsVisibility() {
   if (!map) return;
   const visibility = document.getElementById("toggleSightings")?.checked ? "visible" : "none";
-  [SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
+  [SIGHTINGS_HEATMAP_LAYER_ID, SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
 }
