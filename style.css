@@ -144,6 +144,21 @@ body {
   color: #1e3a8a;
 }
 
+.subway-popup-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.subway-popup-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+}
+
 .map-error {
   position: absolute;
   top: 50%;
