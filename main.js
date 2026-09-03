@@ -164,7 +164,25 @@ async function loadNeighborhoodsData() {
 async function loadSubwayData() {
   const response = await fetch(`./data/subway.geojson?v=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Unable to load Bronx subway stops: ${response.status}`);
-  return response.json();
+  const data = await response.json();
+  return {
+    ...data,
+    features: (data.features || []).map((feature) => {
+      const properties = feature.properties || {};
+      const subwayColor = normalizeSubwayColor(properties.color, "#111827");
+      const subwayColor2 = normalizeSubwayColor(properties.color2, "");
+      return {
+        ...feature,
+        properties: {
+          ...properties,
+          SubwayColor: subwayColor,
+          SubwayColor2: subwayColor2,
+          HasColor2: Boolean(subwayColor2),
+          SplitIconId: subwayColor2 ? getSubwaySplitIconId(subwayColor, subwayColor2) : "",
+        },
+      };
+    }),
+  };
 }
 
 function buildNeighborhoodLabelPoints(neighborhoodsGeoJson) {
@@ -645,9 +663,9 @@ function installSubwayLayer() {
       id: SUBWAY_SINGLE_LAYER_ID,
       type: "circle",
       source: SUBWAY_SOURCE_ID,
-      filter: ["==", ["length", ["to-string", ["coalesce", ["get", "color2"], ""]]], 0],
+      filter: ["!", ["get", "HasColor2"]],
       paint: {
-        "circle-color": ["coalesce", ["get", "color"], "#111827"],
+        "circle-color": ["coalesce", ["get", "SubwayColor"], "#111827"],
         "circle-radius": SUBWAY_POINT_RADIUS,
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1.2,
@@ -661,9 +679,9 @@ function installSubwayLayer() {
       id: SUBWAY_SPLIT_LAYER_ID,
       type: "symbol",
       source: SUBWAY_SOURCE_ID,
-      filter: [">", ["length", ["to-string", ["coalesce", ["get", "color2"], ""]]], 0],
+      filter: ["==", ["get", "HasColor2"], true],
       layout: {
-        "icon-image": ["concat", SUBWAY_ICON_PREFIX, "-", ["get", "color"], "-", ["get", "color2"]],
+        "icon-image": ["get", "SplitIconId"],
         "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.15, 14, 0.22, 18, 0.3],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
@@ -692,8 +710,8 @@ function installSubwayLayer() {
 function addSubwaySplitIcons() {
   const features = subwayData?.features || [];
   features.forEach((feature) => {
-    const color = normalizeSubwayColor(feature?.properties?.color, "#111827");
-    const color2 = normalizeSubwayColor(feature?.properties?.color2, "");
+    const color = feature?.properties?.SubwayColor;
+    const color2 = feature?.properties?.SubwayColor2;
     if (!color2) return;
     const iconId = getSubwaySplitIconId(color, color2);
     if (!map.hasImage(iconId)) map.addImage(iconId, createSplitCircleImageData(color, color2));
