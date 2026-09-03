@@ -102,6 +102,7 @@ async function initializeApp() {
     installNeighborhoodLayers();
     installSightingsLayer();
     installSchoolsLayer();
+    updateNeighborhoodLabelPaint();
     moveNeighborhoodLabelsToTop();
     moveSchoolsToTop();
   });
@@ -273,6 +274,7 @@ function switchBasemap(nextBasemap) {
     installSchoolsLayer();
     applyNeighborhoodVisibility();
     applyNeighborhoodLabelVisibility();
+    updateNeighborhoodLabelPaint();
     applySightingsVisibility();
     applySchoolsVisibility();
     moveNeighborhoodLabelsToTop();
@@ -282,8 +284,8 @@ function switchBasemap(nextBasemap) {
 
 function moveSchoolsToTop() {
   if (!map?.getLayer(SCHOOLS_LAYER_ID)) return;
-  map.moveLayer(SCHOOLS_LAYER_ID);
   if (map.getLayer(SCHOOLS_HIT_LAYER_ID)) map.moveLayer(SCHOOLS_HIT_LAYER_ID);
+  map.moveLayer(SCHOOLS_LAYER_ID);
 }
 
 
@@ -351,13 +353,7 @@ function installNeighborhoodLayers() {
         "text-allow-overlap": true,
         "text-ignore-placement": true,
       },
-      paint: {
-        "text-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 2.4,
-        "text-halo-blur": 0.2,
-        "text-opacity": 1,
-      },
+      paint: getNeighborhoodLabelPaint(),
     });
   }
 
@@ -411,6 +407,24 @@ function applyNeighborhoodLabelVisibility() {
   if (map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) {
     map.setLayoutProperty(NEIGHBORHOODS_LABEL_LAYER_ID, "visibility", visibility);
   }
+}
+
+function getNeighborhoodLabelPaint() {
+  return {
+    "text-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
+    "text-halo-color": currentBasemap === "satellite" ? "#000000" : "#ffffff",
+    "text-halo-width": 2.4,
+    "text-halo-blur": 0.2,
+    "text-opacity": 1,
+  };
+}
+
+function updateNeighborhoodLabelPaint() {
+  if (!map?.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) return;
+  const paint = getNeighborhoodLabelPaint();
+  Object.entries(paint).forEach(([property, value]) => {
+    map.setPaintProperty(NEIGHBORHOODS_LABEL_LAYER_ID, property, value);
+  });
 }
 
 function installSightingsLayer() {
@@ -568,10 +582,14 @@ function installSchoolHandlers() {
 
 function applySchoolsVisibility() {
   if (!map) return;
+  if (map.isStyleLoaded() && (!map.getSource(SCHOOLS_SOURCE_ID) || !map.getLayer(SCHOOLS_LAYER_ID))) {
+    installSchoolsLayer();
+  }
   const visibility = document.getElementById("toggleSchools")?.checked ? "visible" : "none";
   [SCHOOLS_LAYER_ID, SCHOOLS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
+  if (visibility === "visible") moveSchoolsToTop();
 }
 
 function showSchoolPopup(event) {
