@@ -155,3 +155,16 @@ body {
   transform: translate(-50%, -50%);
   font-weight: 700;
 }
+
+
+.legend-swatch {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #000000;
+  border-radius: 3px;
+}
+
+.legend-swatch-neighborhoods {
+  background: linear-gradient(135deg, #43db31 0%, #43db31 50%, #2cc8dd 50%, #2cc8dd 100%);
+}

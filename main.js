@@ -7,6 +7,54 @@ const BRONX_BOUNDS = [
 const INITIAL_CENTER = [-73.8405, 40.8515];
 const INITIAL_ZOOM = 10.1;
 const FIT_OPTIONS = { padding: 36, duration: 0, maxZoom: 12 };
+const NEIGHBORHOODS_SOURCE_ID = "neighborhoods-source";
+const NEIGHBORHOODS_FILL_LAYER_ID = "neighborhoods-fill";
+const NEIGHBORHOODS_OUTLINE_LAYER_ID = "neighborhoods-outline";
+const NEIGHBORHOODS_LABEL_LAYER_ID = "neighborhoods-label";
+const NEIGHBORHOODS_CLICK_FILL_LAYER_ID = "neighborhoods-click-fill";
+const NEIGHBORHOOD_COLORS_BY_NAME = {
+  "Mott Haven-Port Morris": "#43db31",
+  "Melrose": "#2cc8dd",
+  "Hunts Point": "#0ecd5d",
+  "Longwood": "#a451e0",
+  "Morrisania": "#d57544",
+  "Claremont Village-Claremont (East)": "#e0db00",
+  "Crotona Park East": "#cd2f66",
+  "Concourse-Concourse Village": "#2143cd",
+  "Highbridge": "#2171cd",
+  "Mount Eden-Claremont (West)": "#43db31",
+  "University Heights (South)-Morris Heights": "#2cc8dd",
+  "Mount Hope": "#0ecd5d",
+  "Fordham Heights": "#a451e0",
+  "West Farms": "#d57544",
+  "Tremont": "#e0db00",
+  "Belmont": "#cd2f66",
+  "University Heights (North)-Fordham": "#2143cd",
+  "Bedford Park": "#2171cd",
+  "Norwood": "#43db31",
+  "Kingsbridge Heights-Van Cortlandt Village": "#2cc8dd",
+  "Kingsbridge-Marble Hill": "#0ecd5d",
+  "Riverdale-Spuyten Duyvil": "#a451e0",
+  "Soundview-Bruckner-Bronx River": "#d57544",
+  "Soundview-Clason Point": "#e0db00",
+  "Castle Hill-Unionport": "#cd2f66",
+  "Parkchester": "#2143cd",
+  "Westchester Square": "#2171cd",
+  "Throgs Neck-Schuylerville": "#43db31",
+  "Co-op City": "#2cc8dd",
+  "Pelham Parkway-Van Nest": "#0ecd5d",
+  "Morris Park": "#a451e0",
+  "Pelham Gardens": "#d57544",
+  "Allerton": "#e0db00",
+  "Williamsbridge-Olinville": "#cd2f66",
+  "Eastchester-Edenwald-Baychester": "#2143cd",
+  "Wakefield-Woodlawn": "#2171cd",
+  "Country Club": "#43db31",
+  "Pelham Bay": "#2cc8dd",
+  "City Island": "#0ecd5d",
+};
+const NEIGHBORHOOD_LABEL_TEXT_SIZE = ["interpolate", ["linear"], ["zoom"], 9, 11, 11, 14, 13, 18];
+const NEIGHBORHOOD_LABEL_FONT_STACK = ["Noto Sans Regular"];
 const SIGHTINGS_SOURCE_ID = "sightings-source";
 const SIGHTINGS_HEATMAP_LAYER_ID = "confirmed-sightings-heatmap";
 const SIGHTINGS_LAYER_ID = "confirmed-sightings";
@@ -16,6 +64,8 @@ const SIGHTINGS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 8
 
 let map;
 let currentBasemap = "streets";
+let selectedNeighborhoodName = null;
+let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
 
 class HomeControl {
@@ -72,6 +122,7 @@ async function initializeApp() {
 
   map.on("load", () => {
     fitToBronx(false);
+    installNeighborhoodLayers();
     installSightingsLayer();
   });
 
@@ -82,20 +133,124 @@ async function initializeApp() {
     });
   });
 
+  document.getElementById("toggleNeighborhoods")?.addEventListener("change", applyNeighborhoodVisibility);
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
 }
 
 function switchBasemap(nextBasemap) {
   if (!map || nextBasemap === currentBasemap) return;
   currentBasemap = nextBasemap;
+  neighborhoodHandlersInstalledForStyle = false;
   sightingHandlersInstalledForStyle = false;
   map.setStyle(getBasemapStyle(nextBasemap), { diff: false });
 
   // Match the working DDRR pattern: after each new basemap style loads,
   // reinstall local overlay sources/layers and reapply toggle visibility.
   map.once("style.load", () => {
+    installNeighborhoodLayers();
     installSightingsLayer();
+    applyNeighborhoodVisibility();
     applySightingsVisibility();
+  });
+}
+
+
+function installNeighborhoodLayers() {
+  if (!map.getSource(NEIGHBORHOODS_SOURCE_ID)) {
+    map.addSource(NEIGHBORHOODS_SOURCE_ID, {
+      type: "geojson",
+      data: "./data/bronx_neighborhoods.geojson",
+      promoteId: "Name",
+    });
+  }
+
+  if (!map.getLayer(NEIGHBORHOODS_FILL_LAYER_ID)) {
+    map.addLayer({
+      id: NEIGHBORHOODS_FILL_LAYER_ID,
+      type: "fill",
+      source: NEIGHBORHOODS_SOURCE_ID,
+      paint: {
+        "fill-color": ["match", ["get", "Name"], ...Object.entries(NEIGHBORHOOD_COLORS_BY_NAME).flat(), "#43db31"],
+        "fill-opacity": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], 0.58, 0.34],
+        "fill-outline-color": "rgba(0, 0, 0, 0)",
+      },
+    });
+  }
+
+  if (!map.getLayer(NEIGHBORHOODS_OUTLINE_LAYER_ID)) {
+    map.addLayer({
+      id: NEIGHBORHOODS_OUTLINE_LAYER_ID,
+      type: "line",
+      source: NEIGHBORHOODS_SOURCE_ID,
+      paint: {
+        "line-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
+        "line-width": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], 4, 1.4],
+        "line-opacity": 0.9,
+      },
+    });
+  }
+
+  if (!map.getLayer(NEIGHBORHOODS_CLICK_FILL_LAYER_ID)) {
+    map.addLayer({
+      id: NEIGHBORHOODS_CLICK_FILL_LAYER_ID,
+      type: "fill",
+      source: NEIGHBORHOODS_SOURCE_ID,
+      paint: { "fill-color": "#000000", "fill-opacity": 0 },
+    });
+  }
+
+  if (!map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) {
+    map.addLayer({
+      id: NEIGHBORHOODS_LABEL_LAYER_ID,
+      type: "symbol",
+      source: NEIGHBORHOODS_SOURCE_ID,
+      layout: {
+        "text-field": ["replace", ["to-string", ["get", "Name"]], "-", "\n"],
+        "text-size": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE],
+        "text-font": NEIGHBORHOOD_LABEL_FONT_STACK,
+        "text-anchor": "center",
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
+        "text-halo-color": currentBasemap === "satellite" ? "#000000" : "#ffffff",
+        "text-halo-width": currentBasemap === "satellite" ? 2.3 : 1.5,
+        "text-halo-blur": currentBasemap === "satellite" ? 0.4 : 0.2,
+        "text-opacity": 1,
+      },
+    });
+  }
+
+  installNeighborhoodHandlers();
+  applyNeighborhoodVisibility();
+}
+
+function installNeighborhoodHandlers() {
+  if (neighborhoodHandlersInstalledForStyle || !map.getLayer(NEIGHBORHOODS_CLICK_FILL_LAYER_ID)) return;
+  neighborhoodHandlersInstalledForStyle = true;
+  map.on("mouseenter", NEIGHBORHOODS_CLICK_FILL_LAYER_ID, () => { map.getCanvas().style.cursor = "pointer"; });
+  map.on("mouseleave", NEIGHBORHOODS_CLICK_FILL_LAYER_ID, () => { map.getCanvas().style.cursor = ""; });
+  map.on("click", NEIGHBORHOODS_CLICK_FILL_LAYER_ID, (event) => {
+    const feature = event.features?.[0];
+    selectedNeighborhoodName = feature?.properties?.Name || null;
+    updateNeighborhoodEmphasis();
+  });
+}
+
+function updateNeighborhoodEmphasis() {
+  if (!map?.getLayer(NEIGHBORHOODS_FILL_LAYER_ID)) return;
+  const selectedNameExpression = ["literal", selectedNeighborhoodName];
+  map.setPaintProperty(NEIGHBORHOODS_FILL_LAYER_ID, "fill-opacity", ["case", ["==", ["get", "Name"], selectedNameExpression], 0.58, 0.34]);
+  map.setPaintProperty(NEIGHBORHOODS_OUTLINE_LAYER_ID, "line-width", ["case", ["==", ["get", "Name"], selectedNameExpression], 4, 1.4]);
+  map.setLayoutProperty(NEIGHBORHOODS_LABEL_LAYER_ID, "text-size", ["case", ["==", ["get", "Name"], selectedNameExpression], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE]);
+}
+
+function applyNeighborhoodVisibility() {
+  if (!map) return;
+  const visibility = document.getElementById("toggleNeighborhoods")?.checked ? "visible" : "none";
+  [NEIGHBORHOODS_FILL_LAYER_ID, NEIGHBORHOODS_OUTLINE_LAYER_ID, NEIGHBORHOODS_CLICK_FILL_LAYER_ID, NEIGHBORHOODS_LABEL_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
 }
 
