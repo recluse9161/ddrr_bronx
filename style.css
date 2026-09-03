@@ -78,11 +78,7 @@ body.panel-open .basemap-control {
 }
 
 body.panel-open .panel-grab-tab {
-  left: calc(min(88vw, var(--panel-width)) - 10px);
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  left: min(88vw, var(--panel-width));
 }
 
 .panel-header {
