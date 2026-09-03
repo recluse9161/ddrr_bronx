@@ -171,7 +171,7 @@ function installNeighborhoodLayers() {
       source: NEIGHBORHOODS_SOURCE_ID,
       paint: {
         "fill-color": ["match", ["get", "Name"], ...Object.entries(NEIGHBORHOOD_COLORS_BY_NAME).flat(), "#43db31"],
-        "fill-opacity": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], 0.58, 0.34],
+        "fill-opacity": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName || ""]], 0.58, 0.34],
         "fill-outline-color": "rgba(0, 0, 0, 0)",
       },
     });
@@ -184,7 +184,7 @@ function installNeighborhoodLayers() {
       source: NEIGHBORHOODS_SOURCE_ID,
       paint: {
         "line-color": currentBasemap === "satellite" ? "#ffffff" : "#000000",
-        "line-width": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], 4, 1.4],
+        "line-width": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName || ""]], 4, 1.4],
         "line-opacity": 0.9,
       },
     });
@@ -206,7 +206,7 @@ function installNeighborhoodLayers() {
       source: NEIGHBORHOODS_SOURCE_ID,
       layout: {
         "text-field": ["replace", ["to-string", ["get", "Name"]], "-", "\n"],
-        "text-size": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName]], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE],
+        "text-size": ["case", ["==", ["get", "Name"], ["literal", selectedNeighborhoodName || ""]], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE],
         "text-font": NEIGHBORHOOD_LABEL_FONT_STACK,
         "text-anchor": "center",
         "text-allow-overlap": true,
@@ -240,7 +240,7 @@ function installNeighborhoodHandlers() {
 
 function updateNeighborhoodEmphasis() {
   if (!map?.getLayer(NEIGHBORHOODS_FILL_LAYER_ID)) return;
-  const selectedNameExpression = ["literal", selectedNeighborhoodName];
+  const selectedNameExpression = ["literal", selectedNeighborhoodName || ""];
   map.setPaintProperty(NEIGHBORHOODS_FILL_LAYER_ID, "fill-opacity", ["case", ["==", ["get", "Name"], selectedNameExpression], 0.58, 0.34]);
   map.setPaintProperty(NEIGHBORHOODS_OUTLINE_LAYER_ID, "line-width", ["case", ["==", ["get", "Name"], selectedNameExpression], 4, 1.4]);
   map.setLayoutProperty(NEIGHBORHOODS_LABEL_LAYER_ID, "text-size", ["case", ["==", ["get", "Name"], selectedNameExpression], ["interpolate", ["linear"], ["zoom"], 9, 14, 11, 18, 13, 23], NEIGHBORHOOD_LABEL_TEXT_SIZE]);
