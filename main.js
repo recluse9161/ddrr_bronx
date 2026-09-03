@@ -103,6 +103,7 @@ async function initializeApp() {
     installSightingsLayer();
     installSchoolsLayer();
     moveNeighborhoodLabelsToTop();
+    moveSchoolsToTop();
   });
 
   document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
@@ -270,13 +271,19 @@ function switchBasemap(nextBasemap) {
     installNeighborhoodLayers();
     installSightingsLayer();
     installSchoolsLayer();
-    moveNeighborhoodLabelsToTop();
     applyNeighborhoodVisibility();
     applyNeighborhoodLabelVisibility();
     applySightingsVisibility();
     applySchoolsVisibility();
     moveNeighborhoodLabelsToTop();
+    moveSchoolsToTop();
   });
+}
+
+function moveSchoolsToTop() {
+  if (!map?.getLayer(SCHOOLS_LAYER_ID)) return;
+  map.moveLayer(SCHOOLS_LAYER_ID);
+  if (map.getLayer(SCHOOLS_HIT_LAYER_ID)) map.moveLayer(SCHOOLS_HIT_LAYER_ID);
 }
 
 

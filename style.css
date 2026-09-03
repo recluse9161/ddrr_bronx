@@ -100,16 +100,16 @@ body {
 
 .legend-dot {
   flex: 0 0 auto;
-  width: 11px;
-  height: 11px;
-  border: 2px solid #7f1d1d;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #7f1d1d;
   border-radius: 50%;
   background: #dc2626;
 }
 
 .legend-dot-schools {
   background: #1d4ed8;
-  border-color: #1d4ed8;
+  border: 1px solid #1d4ed8;
 }
 
 .maplibregl-popup-content {
