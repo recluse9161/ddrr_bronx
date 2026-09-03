@@ -7,7 +7,7 @@ Independent static MapLibre GL JS map centered on the Bronx, New York City.
 - **Streets:** OpenFreeMap Liberty
 - **Satellite:** Esri World Imagery with CARTO labels
 
-The initial view and home button fit the full Bronx extent responsively on desktop and mobile screens.
+The initial view and home button fit the full Bronx extent responsively on desktop and mobile screens. The map also loads confirmed ICE sighting points from `data/icebreaker.geojson`; click a point to view its incident details.
 
 ## Run locally
 

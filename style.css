@@ -90,3 +90,46 @@ body,
     margin-right: 14px;
   }
 }
+
+
+.layer-control {
+  margin-bottom: 12px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
+.legend-dot {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #7f1d1d;
+  border-radius: 50%;
+  background: #dc2626;
+}
+
+.maplibregl-popup-content {
+  max-height: 240px;
+  overflow: auto;
+  border-radius: 10px;
+}
+
+.popup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.popup-table th,
+.popup-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.popup-table th {
+  width: 38%;
+  color: #1e3a8a;
+}
