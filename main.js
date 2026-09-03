@@ -119,6 +119,7 @@ async function initializeApp() {
     applySubwayVisibility();
     moveSchoolsBelowNeighborhoodLabels();
     moveSubwayBelowNeighborhoodLabels();
+    moveSightingsAboveSubway();
     moveNeighborhoodLabelsToTop();
   });
 
@@ -580,6 +581,15 @@ function applySightingsVisibility() {
   [SIGHTINGS_HEATMAP_LAYER_ID, SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
+  if (visibility === "visible") moveSightingsAboveSubway();
+}
+
+function moveSightingsAboveSubway() {
+  if (!map) return;
+  const beforeLayerId = map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID) ? NEIGHBORHOODS_LABEL_LAYER_ID : undefined;
+  [SIGHTINGS_HEATMAP_LAYER_ID, SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) map.moveLayer(layerId, beforeLayerId);
+  });
 }
 
 function installSchoolsLayer() {
@@ -784,7 +794,10 @@ function applySubwayVisibility() {
   [SUBWAY_SINGLE_LAYER_ID, SUBWAY_SPLIT_LAYER_ID, SUBWAY_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
-  if (visibility === "visible") moveSubwayBelowNeighborhoodLabels();
+  if (visibility === "visible") {
+    moveSubwayBelowNeighborhoodLabels();
+    moveSightingsAboveSubway();
+  }
 }
 
 function showSubwayHoverPopup(event) {
