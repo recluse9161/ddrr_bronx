@@ -430,8 +430,9 @@ function installNeighborhoodLayers() {
         "text-size": NEIGHBORHOOD_LABEL_TEXT_SIZE,
         "text-font": NEIGHBORHOOD_LABEL_FONT_STACK,
         "text-anchor": "center",
-        "text-allow-overlap": true,
-        "text-ignore-placement": true,
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+        "text-padding": 2,
       },
       paint: getNeighborhoodLabelPaint(),
     });
