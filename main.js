@@ -4,10 +4,15 @@ const BRONX_BOUNDS = [
   [-73.933, 40.785],
   [-73.748, 40.918],
 ];
+const INITIAL_CENTER = [-73.8405, 40.8515];
+const INITIAL_ZOOM = 10.1;
 const FIT_OPTIONS = { padding: 36, duration: 0, maxZoom: 12 };
 const SIGHTINGS_SOURCE_ID = "sightings-source";
 const SIGHTINGS_LAYER_ID = "sightings-points";
 const SIGHTINGS_HIT_LAYER_ID = "sightings-hit-area";
+
+let map;
+let sightingHandlersInstalled = false;
 
 class HomeControl {
   constructor(onClick) {
@@ -35,39 +40,48 @@ class HomeControl {
   }
 }
 
-const map = new maplibregl.Map({
-  container: "map",
-  style: getBasemapStyle("streets"),
-  bounds: BRONX_BOUNDS,
-  fitBoundsOptions: FIT_OPTIONS,
-  attributionControl: true,
-});
+window.addEventListener("DOMContentLoaded", initializeMap);
 
-map.addControl(new maplibregl.NavigationControl(), "top-right");
-map.addControl(new HomeControl(fitToBronx), "top-right");
+function initializeMap() {
+  if (!window.maplibregl) {
+    showMapError("MapLibre did not load. Check your internet connection or browser console.");
+    return;
+  }
 
-map.on("error", (event) => {
-  console.error("MapLibre runtime error:", event?.error || event);
-});
-
-map.on("style.load", installSightingsLayer);
-map.on("mouseenter", SIGHTINGS_HIT_LAYER_ID, () => {
-  map.getCanvas().style.cursor = "pointer";
-});
-map.on("mouseleave", SIGHTINGS_HIT_LAYER_ID, () => {
-  map.getCanvas().style.cursor = "";
-});
-map.on("click", SIGHTINGS_HIT_LAYER_ID, showSightingPopup);
-
-document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
-  radio.addEventListener("change", () => {
-    if (radio.checked) map.setStyle(getBasemapStyle(radio.value), { diff: false });
+  map = new maplibregl.Map({
+    container: "map",
+    style: getBasemapStyle("streets"),
+    center: INITIAL_CENTER,
+    zoom: INITIAL_ZOOM,
+    attributionControl: true,
   });
-});
 
-document.getElementById("toggleSightings").addEventListener("change", applySightingsVisibility);
+  map.addControl(new maplibregl.NavigationControl(), "top-right");
+  map.addControl(new HomeControl(fitToBronx), "top-right");
+
+  map.on("error", (event) => {
+    console.error("MapLibre runtime error:", event?.error || event);
+  });
+
+  map.on("load", () => {
+    fitToBronx(false);
+    installSightingsLayer();
+  });
+
+  map.on("style.load", installSightingsLayer);
+
+  document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (radio.checked) map.setStyle(getBasemapStyle(radio.value), { diff: false });
+    });
+  });
+
+  document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
+}
 
 function installSightingsLayer() {
+  if (!map?.isStyleLoaded()) return;
+
   if (!map.getSource(SIGHTINGS_SOURCE_ID)) {
     map.addSource(SIGHTINGS_SOURCE_ID, {
       type: "geojson",
@@ -104,11 +118,26 @@ function installSightingsLayer() {
     });
   }
 
+  installSightingHandlers();
   applySightingsVisibility();
 }
 
+function installSightingHandlers() {
+  if (sightingHandlersInstalled) return;
+  sightingHandlersInstalled = true;
+
+  map.on("mouseenter", SIGHTINGS_HIT_LAYER_ID, () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", SIGHTINGS_HIT_LAYER_ID, () => {
+    map.getCanvas().style.cursor = "";
+  });
+  map.on("click", SIGHTINGS_HIT_LAYER_ID, showSightingPopup);
+}
+
 function applySightingsVisibility() {
-  const visibility = document.getElementById("toggleSightings").checked ? "visible" : "none";
+  if (!map) return;
+  const visibility = document.getElementById("toggleSightings")?.checked ? "visible" : "none";
   [SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
@@ -139,10 +168,17 @@ function escapeHtml(value) {
 }
 
 function fitToBronx(animated = true) {
+  if (!map) return;
   map.fitBounds(BRONX_BOUNDS, {
     ...FIT_OPTIONS,
     duration: animated ? 700 : 0,
   });
+}
+
+function showMapError(message) {
+  const mapElement = document.getElementById("map");
+  if (!mapElement) return;
+  mapElement.innerHTML = `<div class="map-error">${escapeHtml(message)}</div>`;
 }
 
 function getBasemapStyle(name) {
