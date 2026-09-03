@@ -22,6 +22,15 @@ const SIGHTINGS_LAYER_ID = "confirmed-sightings";
 const SIGHTINGS_HIT_LAYER_ID = "confirmed-sightings-interaction";
 const SIGHTINGS_POINT_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 7, 18, 10];
 const SIGHTINGS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 8, 14, 11, 18, 14];
+const SCHOOLS_SOURCE_ID = "schools-source";
+const SCHOOLS_LAYER_ID = "schools";
+const SCHOOLS_HIT_LAYER_ID = "schools-interaction";
+const SCHOOLS_FILL_COLOR = "#1d4ed8";
+const SCHOOLS_STROKE_COLOR = "#1d4ed8";
+// SCHOOL POINT SIZE: same values used by the main DDRR map.
+const SCHOOLS_CIRCLE_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 1, 14, 3];
+// SCHOOL TAP TARGET SIZE: larger invisible radius used for click/tap interactions.
+const SCHOOLS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 10, 14, 16];
 
 let map;
 let currentBasemap = "streets";
@@ -31,6 +40,7 @@ let neighborhoodsData = null;
 let neighborhoodLabelPointsData = null;
 let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
+let schoolHandlersInstalledForStyle = false;
 
 class HomeControl {
   constructor(onClick) {
@@ -91,6 +101,7 @@ async function initializeApp() {
     fitToBronx(false);
     installNeighborhoodLayers();
     installSightingsLayer();
+    installSchoolsLayer();
     moveNeighborhoodLabelsToTop();
   });
 
@@ -107,6 +118,7 @@ async function initializeApp() {
   });
   document.getElementById("toggleNeighborhoodLabels")?.addEventListener("change", applyNeighborhoodLabelVisibility);
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
+  document.getElementById("toggleSchools")?.addEventListener("change", applySchoolsVisibility);
 }
 
 
@@ -249,6 +261,7 @@ function switchBasemap(nextBasemap) {
   currentBasemap = nextBasemap;
   neighborhoodHandlersInstalledForStyle = false;
   sightingHandlersInstalledForStyle = false;
+  schoolHandlersInstalledForStyle = false;
   map.setStyle(getBasemapStyle(nextBasemap), { diff: false });
 
   // Match the working DDRR pattern: after each new basemap style loads,
@@ -256,10 +269,12 @@ function switchBasemap(nextBasemap) {
   map.once("style.load", () => {
     installNeighborhoodLayers();
     installSightingsLayer();
+    installSchoolsLayer();
     moveNeighborhoodLabelsToTop();
     applyNeighborhoodVisibility();
     applyNeighborhoodLabelVisibility();
     applySightingsVisibility();
+    applySchoolsVisibility();
     moveNeighborhoodLabelsToTop();
   });
 }
@@ -488,6 +503,82 @@ function applySightingsVisibility() {
   [SIGHTINGS_HEATMAP_LAYER_ID, SIGHTINGS_LAYER_ID, SIGHTINGS_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
+}
+
+function installSchoolsLayer() {
+  if (!map.getSource(SCHOOLS_SOURCE_ID)) {
+    map.addSource(SCHOOLS_SOURCE_ID, {
+      type: "geojson",
+      data: "./data/schools.geojson",
+    });
+  }
+
+  if (!map.getLayer(SCHOOLS_LAYER_ID)) {
+    map.addLayer({
+      id: SCHOOLS_LAYER_ID,
+      type: "circle",
+      source: SCHOOLS_SOURCE_ID,
+      paint: {
+        "circle-color": SCHOOLS_FILL_COLOR,
+        "circle-radius": SCHOOLS_CIRCLE_RADIUS,
+        "circle-stroke-color": SCHOOLS_STROKE_COLOR,
+        "circle-stroke-width": 1.5,
+        "circle-opacity": 0.95,
+      },
+    });
+  }
+
+  if (!map.getLayer(SCHOOLS_HIT_LAYER_ID)) {
+    map.addLayer({
+      id: SCHOOLS_HIT_LAYER_ID,
+      type: "circle",
+      source: SCHOOLS_SOURCE_ID,
+      paint: {
+        "circle-color": "#000000",
+        "circle-radius": SCHOOLS_INTERACTION_RADIUS,
+        "circle-opacity": 0,
+        "circle-stroke-width": 0,
+      },
+    });
+  }
+
+  installSchoolHandlers();
+  applySchoolsVisibility();
+}
+
+function installSchoolHandlers() {
+  if (schoolHandlersInstalledForStyle || !map.getLayer(SCHOOLS_HIT_LAYER_ID)) return;
+  schoolHandlersInstalledForStyle = true;
+
+  map.on("mouseenter", SCHOOLS_HIT_LAYER_ID, () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", SCHOOLS_HIT_LAYER_ID, () => {
+    map.getCanvas().style.cursor = "";
+  });
+  map.on("click", SCHOOLS_HIT_LAYER_ID, showSchoolPopup);
+}
+
+function applySchoolsVisibility() {
+  if (!map) return;
+  const visibility = document.getElementById("toggleSchools")?.checked ? "visible" : "none";
+  [SCHOOLS_LAYER_ID, SCHOOLS_HIT_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
+  });
+}
+
+function showSchoolPopup(event) {
+  const feature = event.features?.[0];
+  if (!feature) return;
+
+  const rows = Object.entries(feature.properties || {})
+    .map(([key, value]) => `<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value ?? ""))}</td></tr>`)
+    .join("");
+
+  new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 12, maxWidth: "320px" })
+    .setLngLat(event.lngLat)
+    .setHTML(`<table class="popup-table">${rows}</table>`)
+    .addTo(map);
 }
 
 function showSightingPopup(event) {

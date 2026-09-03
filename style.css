@@ -107,6 +107,11 @@ body {
   background: #dc2626;
 }
 
+.legend-dot-schools {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
 .maplibregl-popup-content {
   max-height: 240px;
   overflow: auto;
