@@ -12,15 +12,22 @@
   <div id="app">
     <div id="map" aria-label="Interactive map of the Bronx"></div>
 
-    <section class="basemap-control" aria-label="Basemap selection">
-      <h1>DDRR Bronx</h1>
+    <section class="basemap-control" aria-label="Map controls">
       <fieldset class="layer-control">
         <legend>Layers</legend>
-        <label>
-          <input id="toggleNeighborhoods" type="checkbox" checked />
-          <span class="legend-swatch legend-swatch-neighborhoods" aria-hidden="true"></span>
-          <span>Bronx Neighborhoods</span>
-        </label>
+        <div class="legend-parent-row">
+          <label>
+            <input id="toggleNeighborhoods" type="checkbox" checked />
+            <span class="legend-swatch legend-swatch-neighborhoods" aria-hidden="true"></span>
+            <span>Neighborhoods</span>
+          </label>
+          <div class="legend-child-row">
+            <label>
+              <input id="toggleNeighborhoodLabels" type="checkbox" checked />
+              <span>Name Label</span>
+            </label>
+          </div>
+        </div>
         <label>
           <input id="toggleSightings" type="checkbox" checked />
           <span class="legend-dot" aria-hidden="true"></span>
