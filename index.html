@@ -15,6 +15,21 @@
     <section class="basemap-control" aria-label="Map controls">
       <fieldset class="layer-control">
         <legend>Layers</legend>
+        <label>
+          <input id="toggleSightings" type="checkbox" checked />
+          <span class="legend-dot" aria-hidden="true"></span>
+          <span>Confirmed ICE Sightings</span>
+        </label>
+        <label>
+          <input id="toggleSubway" type="checkbox" checked />
+          <span class="legend-dot legend-dot-subway" aria-hidden="true"></span>
+          <span>Subway Stops</span>
+        </label>
+        <label>
+          <input id="toggleSchools" type="checkbox" />
+          <span class="legend-dot legend-dot-schools" aria-hidden="true"></span>
+          <span>Schools</span>
+        </label>
         <div class="touch-row legend-parent-row" role="heading" aria-level="3">
           <label class="legend-parent-label">
             <input id="toggleNeighborhoods" type="checkbox" checked />
@@ -28,21 +43,6 @@
             <span>Name Label</span>
           </label>
         </div>
-        <label>
-          <input id="toggleSightings" type="checkbox" checked />
-          <span class="legend-dot" aria-hidden="true"></span>
-          <span>Confirmed ICE Sightings</span>
-        </label>
-        <label>
-          <input id="toggleSchools" type="checkbox" />
-          <span class="legend-dot legend-dot-schools" aria-hidden="true"></span>
-          <span>Schools</span>
-        </label>
-        <label>
-          <input id="toggleSubway" type="checkbox" checked />
-          <span class="legend-dot legend-dot-subway" aria-hidden="true"></span>
-          <span>Subway Stops</span>
-        </label>
       </fieldset>
 
       <fieldset>

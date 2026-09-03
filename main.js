@@ -799,7 +799,7 @@ function showSubwayPopup(event, closeButton) {
   const train = String(properties.daytime_routes ?? properties.train ?? "").trim();
   const stopName = String(properties.stop_name ?? "").trim();
   const rows = [
-    `<tr><th>train</th><td>${escapeHtml(train)}</td></tr>`,
+    `<tr><td colspan="2">${escapeHtml(train)}</td></tr>`,
     `<tr><td colspan="2">${escapeHtml(stopName)}</td></tr>`,
   ].join("");
 
