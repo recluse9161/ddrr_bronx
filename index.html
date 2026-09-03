@@ -6,13 +6,16 @@
   <meta name="description" content="Interactive MapLibre map centered on the Bronx, New York." />
   <title>DDRR Bronx Map</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <link rel="stylesheet" href="./style.css?v=subway-svg-popup" />
+  <link rel="stylesheet" href="./style.css?v=mobile-panel" />
 </head>
 <body>
   <div id="app">
-    <div id="map" aria-label="Interactive map of the Bronx"></div>
+    <aside id="controlPanel" class="basemap-control control-panel" aria-label="Map controls">
+      <header class="panel-header">
+        <h1>DDRR Bronx<br /><span class="panel-title-subtle">Map Legend</span></h1>
+        <button id="panelCloseBtn" class="panel-close-btn" type="button" aria-label="Close controls">✕</button>
+      </header>
 
-    <section class="basemap-control" aria-label="Map controls">
       <fieldset class="layer-control">
         <legend>Layers</legend>
         <label>
@@ -56,10 +59,15 @@
           <span>Satellite</span>
         </label>
       </fieldset>
-    </section>
+    </aside>
+
+    <button id="panelGrabTab" class="panel-grab-tab" type="button" aria-controls="controlPanel" aria-expanded="false"
+      aria-label="Open controls panel">▶</button>
+
+    <div id="map" aria-label="Interactive map of the Bronx"></div>
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="./main.js?v=subway-svg-popup" defer></script>
+  <script src="./main.js?v=mobile-panel" defer></script>
 </body>
 </html>

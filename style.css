@@ -1,4 +1,8 @@
 :root {
+  --panel-width: 220px;
+  --panel-bg: rgba(255, 255, 255, 0.96);
+  --panel-border: rgba(15, 23, 42, 0.18);
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   color: #0f172a;
   font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -29,15 +33,92 @@ body {
 .basemap-control {
   position: absolute;
   z-index: 10;
-  top: 12px;
-  left: 12px;
-  width: min(220px, calc(100vw - 100px));
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(88vw, var(--panel-width));
   padding: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  border-right: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow);
   backdrop-filter: blur(6px);
+  transform: translateX(-104%);
+  transition: transform 220ms ease;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+body.panel-open .basemap-control {
+  transform: translateX(0);
+}
+
+.panel-grab-tab {
+  position: absolute;
+  z-index: 55;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 56px;
+  border: 1px solid rgba(15, 23, 42, 0.24);
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: left 220ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+body.panel-open .panel-grab-tab {
+  left: calc(min(88vw, var(--panel-width)) - 10px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.panel-header {
+  position: relative;
+  padding-right: 40px;
+}
+
+.panel-header h1 {
+  margin: 0 0 14px;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.panel-title-subtle {
+  font-weight: 400;
+}
+
+.panel-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.25);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
 }
 
 .basemap-control fieldset {
@@ -68,7 +149,9 @@ body {
   margin: 0;
 }
 
-.basemap-control input:focus-visible {
+.basemap-control input:focus-visible,
+.panel-close-btn:focus-visible,
+.panel-grab-tab:focus-visible {
   outline: 3px solid #93c5fd;
   outline-offset: 2px;
 }
@@ -77,20 +160,6 @@ body {
   font-size: 21px;
   font-weight: 700;
 }
-
-@media (max-width: 520px) {
-  .basemap-control {
-    top: 8px;
-    left: 8px;
-    padding: 10px 12px;
-  }
-
-  .basemap-control > fieldset > label {
-    display: inline-flex;
-    margin-right: 14px;
-  }
-}
-
 
 .layer-control {
   margin-bottom: 12px !important;
@@ -145,12 +214,12 @@ body {
 }
 
 .subway-popup {
-  min-width: 86px;
-  max-width: 240px;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 72px));
 }
 
 .subway-popup-icons {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
@@ -195,6 +264,7 @@ body {
 
 .subway-popup-stop-name {
   font-size: 0.83rem;
+  font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -249,4 +319,29 @@ body {
 
 .touch-row-child input {
   margin-left: 0;
+}
+
+@media (min-width: 1024px) {
+  .panel-grab-tab {
+    display: none;
+  }
+
+  .panel-close-btn {
+    display: none;
+  }
+
+  .panel-header {
+    padding-right: 0;
+  }
+
+  .basemap-control {
+    top: 12px;
+    bottom: auto;
+    left: 12px;
+    width: var(--panel-width);
+    max-height: calc(100vh - 24px);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    transform: translateX(0);
+  }
 }

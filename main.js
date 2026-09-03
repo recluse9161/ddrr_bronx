@@ -139,6 +139,29 @@ async function initializeApp() {
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
   document.getElementById("toggleSchools")?.addEventListener("change", applySchoolsVisibility);
   document.getElementById("toggleSubway")?.addEventListener("change", applySubwayVisibility);
+  setupControlPanelDrawer();
+}
+
+function setupControlPanelDrawer() {
+  const panelGrabTab = document.getElementById("panelGrabTab");
+  const panelCloseBtn = document.getElementById("panelCloseBtn");
+
+  function setPanelOpen(open) {
+    document.body.classList.toggle("panel-open", open);
+    panelGrabTab?.setAttribute("aria-expanded", String(open));
+    panelGrabTab?.setAttribute("aria-label", open ? "Close controls panel" : "Open controls panel");
+    if (panelGrabTab) panelGrabTab.textContent = open ? "◀" : "▶";
+  }
+
+  panelGrabTab?.addEventListener("click", () => {
+    setPanelOpen(!document.body.classList.contains("panel-open"));
+  });
+  panelCloseBtn?.addEventListener("click", () => setPanelOpen(false));
+  setPanelOpen(false);
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 1023px)").matches;
 }
 
 
@@ -802,6 +825,11 @@ function applySubwayVisibility() {
 }
 
 function showSubwayHoverPopup(event) {
+  if (isMobileViewport()) {
+    subwayHoverPopup?.remove();
+    subwayHoverPopup = null;
+    return;
+  }
   subwayHoverPopup?.remove();
   subwayHoverPopup = showSubwayPopup(event, false);
 }
@@ -819,7 +847,7 @@ function showSubwayPopup(event, closeButton) {
     `</div>`,
   ].join("");
 
-  const popup = new maplibregl.Popup({ closeButton, closeOnClick: closeButton, offset: 12, maxWidth: "280px" })
+  const popup = new maplibregl.Popup({ closeButton, closeOnClick: closeButton, offset: 12, maxWidth: "none" })
     .setLngLat(event.lngLat)
     .setHTML(popupHtml)
     .addTo(map);
