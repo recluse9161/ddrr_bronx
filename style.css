@@ -144,19 +144,59 @@ body {
   color: #1e3a8a;
 }
 
+.subway-popup {
+  min-width: 86px;
+  max-width: 240px;
+}
+
 .subway-popup-icons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  max-width: 220px;
+  max-width: 228px;
+  margin-bottom: 6px;
+}
+
+.subway-popup-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .subway-popup-icon {
   display: block;
-  flex: 0 0 auto;
   width: 24px;
   height: 24px;
+}
+
+.subway-popup-icon-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #111827;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.subway-popup-routes-text {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.subway-popup-stop-name {
+  font-size: 0.83rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .map-error {

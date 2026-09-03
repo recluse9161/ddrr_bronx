@@ -39,6 +39,7 @@ const SUBWAY_POINT_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 6, 
 const SUBWAY_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 10, 14, 14, 18, 18];
 const SUBWAY_ICON_SIZE = 64;
 const SUBWAY_ICON_PREFIX = "subway-split";
+const SUBWAY_ROUTE_ICON_PATH = "svg/";
 
 let map;
 let currentBasemap = "streets";
@@ -811,16 +812,18 @@ function showSubwayPopup(event, closeButton) {
   const properties = feature.properties || {};
   const train = String(properties.daytime_routes ?? properties.train ?? "").trim();
   const stopName = String(properties.stop_name ?? "").trim();
-  const trainIcons = buildSubwayRouteIcons(train);
-  const rows = [
-    `<tr><td colspan="2">${trainIcons || escapeHtml(train)}</td></tr>`,
-    `<tr><td colspan="2">${escapeHtml(stopName)}</td></tr>`,
+  const popupHtml = [
+    `<div class="subway-popup">`,
+    buildSubwayRouteIcons(train) || `<div class="subway-popup-routes-text">${escapeHtml(train)}</div>`,
+    `<div class="subway-popup-stop-name">${escapeHtml(stopName)}</div>`,
+    `</div>`,
   ].join("");
 
   const popup = new maplibregl.Popup({ closeButton, closeOnClick: closeButton, offset: 12, maxWidth: "280px" })
     .setLngLat(event.lngLat)
-    .setHTML(`<table class="popup-table">${rows}</table>`)
+    .setHTML(popupHtml)
     .addTo(map);
+  installSubwayPopupIconFallbacks(popup);
   return popup;
 }
 
@@ -833,12 +836,25 @@ function buildSubwayRouteIcons(train) {
 
   const icons = routes
     .map((route) => {
-      const iconPath = `./svg/${encodeURIComponent(route)}.svg`;
+      const iconPath = new URL(`${SUBWAY_ROUTE_ICON_PATH}${encodeURIComponent(route)}.svg`, document.baseURI).href;
       const routeLabel = escapeHtml(route);
-      return `<img class="subway-popup-icon" src="${iconPath}" alt="${routeLabel} train" title="${routeLabel}" loading="lazy" />`;
+      return `<span class="subway-popup-icon-wrap"><img class="subway-popup-icon" src="${escapeHtml(iconPath)}" alt="${routeLabel} train" title="${routeLabel}" data-route="${routeLabel}" /></span>`;
     })
     .join("");
   return `<div class="subway-popup-icons" aria-label="${escapeHtml(train)}">${icons}</div>`;
+}
+
+function installSubwayPopupIconFallbacks(popup) {
+  const popupElement = popup.getElement?.();
+  popupElement?.querySelectorAll(".subway-popup-icon").forEach((icon) => {
+    icon.addEventListener("error", () => {
+      const route = icon.getAttribute("data-route") || icon.getAttribute("title") || "?";
+      const fallback = document.createElement("span");
+      fallback.className = "subway-popup-icon-fallback";
+      fallback.textContent = route;
+      icon.replaceWith(fallback);
+    }, { once: true });
+  });
 }
 
 function showSchoolPopup(event) {
