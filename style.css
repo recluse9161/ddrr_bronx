@@ -112,6 +112,11 @@ body {
   border: 1px solid #1d4ed8;
 }
 
+.legend-dot-subway {
+  background: linear-gradient(90deg, #d82233 0 50%, #009952 50% 100%);
+  border: 1px solid #111827;
+}
+
 .maplibregl-popup-content {
   max-height: 240px;
   overflow: auto;

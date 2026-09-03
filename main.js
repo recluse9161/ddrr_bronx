@@ -31,6 +31,14 @@ const SCHOOLS_STROKE_COLOR = "#1d4ed8";
 const SCHOOLS_CIRCLE_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 1, 14, 3];
 // SCHOOL TAP TARGET SIZE: larger invisible radius used for click/tap interactions.
 const SCHOOLS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 10, 14, 16];
+const SUBWAY_SOURCE_ID = "subway-source";
+const SUBWAY_SINGLE_LAYER_ID = "subway-single";
+const SUBWAY_SPLIT_LAYER_ID = "subway-split";
+const SUBWAY_HIT_LAYER_ID = "subway-interaction";
+const SUBWAY_POINT_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 6, 18, 8];
+const SUBWAY_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 10, 14, 14, 18, 18];
+const SUBWAY_ICON_SIZE = 64;
+const SUBWAY_ICON_PREFIX = "subway-split";
 
 let map;
 let currentBasemap = "streets";
@@ -38,9 +46,12 @@ let flashingNeighborhoodName = "";
 let neighborhoodFlashTimeout = null;
 let neighborhoodsData = null;
 let neighborhoodLabelPointsData = null;
+let subwayData = null;
 let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
 let schoolHandlersInstalledForStyle = false;
+let subwayHandlersInstalledForStyle = false;
+let subwayHoverPopup = null;
 
 class HomeControl {
   constructor(onClick) {
@@ -81,6 +92,7 @@ async function initializeApp() {
 
   neighborhoodsData = await loadNeighborhoodsData();
   neighborhoodLabelPointsData = buildNeighborhoodLabelPoints(neighborhoodsData);
+  subwayData = await loadSubwayData();
 
   map = new maplibregl.Map({
     container: "map",
@@ -102,8 +114,11 @@ async function initializeApp() {
     installNeighborhoodLayers();
     installSightingsLayer();
     installSchoolsLayer();
+    installSubwayLayer();
     updateNeighborhoodLabelPaint();
+    applySubwayVisibility();
     moveSchoolsBelowNeighborhoodLabels();
+    moveSubwayBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
   });
 
@@ -121,6 +136,7 @@ async function initializeApp() {
   document.getElementById("toggleNeighborhoodLabels")?.addEventListener("change", applyNeighborhoodLabelVisibility);
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
   document.getElementById("toggleSchools")?.addEventListener("change", applySchoolsVisibility);
+  document.getElementById("toggleSubway")?.addEventListener("change", applySubwayVisibility);
 }
 
 
@@ -143,6 +159,12 @@ async function loadNeighborhoodsData() {
       };
     }),
   };
+}
+
+async function loadSubwayData() {
+  const response = await fetch(`./data/subway.geojson?v=${Date.now()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Unable to load Bronx subway stops: ${response.status}`);
+  return response.json();
 }
 
 function buildNeighborhoodLabelPoints(neighborhoodsGeoJson) {
@@ -264,6 +286,9 @@ function switchBasemap(nextBasemap) {
   neighborhoodHandlersInstalledForStyle = false;
   sightingHandlersInstalledForStyle = false;
   schoolHandlersInstalledForStyle = false;
+  subwayHandlersInstalledForStyle = false;
+  subwayHoverPopup?.remove();
+  subwayHoverPopup = null;
   map.setStyle(getBasemapStyle(nextBasemap), { diff: false });
 
   // Match the working DDRR pattern: after each new basemap style loads,
@@ -272,12 +297,15 @@ function switchBasemap(nextBasemap) {
     installNeighborhoodLayers();
     installSightingsLayer();
     installSchoolsLayer();
+    installSubwayLayer();
     applyNeighborhoodVisibility();
     applyNeighborhoodLabelVisibility();
     updateNeighborhoodLabelPaint();
     applySightingsVisibility();
     applySchoolsVisibility();
+    applySubwayVisibility();
     moveSchoolsBelowNeighborhoodLabels();
+    moveSubwayBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
   });
 }
@@ -287,6 +315,14 @@ function moveSchoolsBelowNeighborhoodLabels() {
   const beforeLayerId = map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID) ? NEIGHBORHOODS_LABEL_LAYER_ID : undefined;
   if (map.getLayer(SCHOOLS_HIT_LAYER_ID)) map.moveLayer(SCHOOLS_HIT_LAYER_ID, beforeLayerId);
   map.moveLayer(SCHOOLS_LAYER_ID, beforeLayerId);
+}
+
+function moveSubwayBelowNeighborhoodLabels() {
+  if (!map?.getLayer(SUBWAY_SINGLE_LAYER_ID) && !map?.getLayer(SUBWAY_SPLIT_LAYER_ID)) return;
+  const beforeLayerId = map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID) ? NEIGHBORHOODS_LABEL_LAYER_ID : undefined;
+  [SUBWAY_HIT_LAYER_ID, SUBWAY_SINGLE_LAYER_ID, SUBWAY_SPLIT_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) map.moveLayer(layerId, beforeLayerId);
+  });
 }
 
 
@@ -592,6 +628,168 @@ function applySchoolsVisibility() {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
   });
   if (visibility === "visible") moveSchoolsBelowNeighborhoodLabels();
+}
+
+function installSubwayLayer() {
+  if (!map.getSource(SUBWAY_SOURCE_ID)) {
+    map.addSource(SUBWAY_SOURCE_ID, {
+      type: "geojson",
+      data: subwayData,
+    });
+  }
+
+  addSubwaySplitIcons();
+
+  if (!map.getLayer(SUBWAY_SINGLE_LAYER_ID)) {
+    map.addLayer({
+      id: SUBWAY_SINGLE_LAYER_ID,
+      type: "circle",
+      source: SUBWAY_SOURCE_ID,
+      filter: ["==", ["length", ["to-string", ["coalesce", ["get", "color2"], ""]]], 0],
+      paint: {
+        "circle-color": ["coalesce", ["get", "color"], "#111827"],
+        "circle-radius": SUBWAY_POINT_RADIUS,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.2,
+        "circle-opacity": 0.98,
+      },
+    }, NEIGHBORHOODS_LABEL_LAYER_ID);
+  }
+
+  if (!map.getLayer(SUBWAY_SPLIT_LAYER_ID)) {
+    map.addLayer({
+      id: SUBWAY_SPLIT_LAYER_ID,
+      type: "symbol",
+      source: SUBWAY_SOURCE_ID,
+      filter: [">", ["length", ["to-string", ["coalesce", ["get", "color2"], ""]]], 0],
+      layout: {
+        "icon-image": ["concat", SUBWAY_ICON_PREFIX, "-", ["get", "color"], "-", ["get", "color2"]],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.15, 14, 0.22, 18, 0.3],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+    }, NEIGHBORHOODS_LABEL_LAYER_ID);
+  }
+
+  if (!map.getLayer(SUBWAY_HIT_LAYER_ID)) {
+    map.addLayer({
+      id: SUBWAY_HIT_LAYER_ID,
+      type: "circle",
+      source: SUBWAY_SOURCE_ID,
+      paint: {
+        "circle-color": "#000000",
+        "circle-radius": SUBWAY_INTERACTION_RADIUS,
+        "circle-opacity": 0,
+        "circle-stroke-width": 0,
+      },
+    }, NEIGHBORHOODS_LABEL_LAYER_ID);
+  }
+
+  installSubwayHandlers();
+  applySubwayVisibility();
+}
+
+function addSubwaySplitIcons() {
+  const features = subwayData?.features || [];
+  features.forEach((feature) => {
+    const color = normalizeSubwayColor(feature?.properties?.color, "#111827");
+    const color2 = normalizeSubwayColor(feature?.properties?.color2, "");
+    if (!color2) return;
+    const iconId = getSubwaySplitIconId(color, color2);
+    if (!map.hasImage(iconId)) map.addImage(iconId, createSplitCircleImageData(color, color2));
+  });
+}
+
+function createSplitCircleImageData(color, color2) {
+  const canvas = document.createElement("canvas");
+  canvas.width = SUBWAY_ICON_SIZE;
+  canvas.height = SUBWAY_ICON_SIZE;
+  const ctx = canvas.getContext("2d");
+  const center = SUBWAY_ICON_SIZE / 2;
+  const radius = SUBWAY_ICON_SIZE / 2 - 4;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, center, SUBWAY_ICON_SIZE);
+  ctx.fillStyle = color2;
+  ctx.fillRect(center, 0, center, SUBWAY_ICON_SIZE);
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  return ctx.getImageData(0, 0, SUBWAY_ICON_SIZE, SUBWAY_ICON_SIZE);
+}
+
+function getSubwaySplitIconId(color, color2) {
+  return `${SUBWAY_ICON_PREFIX}-${color}-${color2}`;
+}
+
+function normalizeSubwayColor(value, fallback) {
+  const color = String(value ?? "").trim();
+  return color && color.toLowerCase() !== "null" ? color : fallback;
+}
+
+function installSubwayHandlers() {
+  if (subwayHandlersInstalledForStyle || !map.getLayer(SUBWAY_HIT_LAYER_ID)) return;
+  subwayHandlersInstalledForStyle = true;
+
+  map.on("mouseenter", SUBWAY_HIT_LAYER_ID, (event) => {
+    map.getCanvas().style.cursor = "pointer";
+    showSubwayHoverPopup(event);
+  });
+  map.on("mousemove", SUBWAY_HIT_LAYER_ID, showSubwayHoverPopup);
+  map.on("mouseleave", SUBWAY_HIT_LAYER_ID, () => {
+    map.getCanvas().style.cursor = "";
+    subwayHoverPopup?.remove();
+    subwayHoverPopup = null;
+  });
+  map.on("click", SUBWAY_HIT_LAYER_ID, (event) => {
+    subwayHoverPopup?.remove();
+    subwayHoverPopup = null;
+    showSubwayPopup(event, true);
+  });
+}
+
+function applySubwayVisibility() {
+  if (!map) return;
+  if (map.isStyleLoaded() && (!map.getSource(SUBWAY_SOURCE_ID) || !map.getLayer(SUBWAY_SINGLE_LAYER_ID))) {
+    installSubwayLayer();
+  }
+  const visibility = document.getElementById("toggleSubway")?.checked ? "visible" : "none";
+  [SUBWAY_SINGLE_LAYER_ID, SUBWAY_SPLIT_LAYER_ID, SUBWAY_HIT_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, "visibility", visibility);
+  });
+  if (visibility === "visible") moveSubwayBelowNeighborhoodLabels();
+}
+
+function showSubwayHoverPopup(event) {
+  subwayHoverPopup?.remove();
+  subwayHoverPopup = showSubwayPopup(event, false);
+}
+
+function showSubwayPopup(event, closeButton) {
+  const feature = event.features?.[0];
+  if (!feature) return null;
+  const properties = feature.properties || {};
+  const train = String(properties.daytime_routes ?? properties.train ?? "").trim();
+  const stopName = String(properties.stop_name ?? "").trim();
+  const rows = [
+    `<tr><th>train</th><td>${escapeHtml(train)}</td></tr>`,
+    `<tr><td colspan="2">${escapeHtml(stopName)}</td></tr>`,
+  ].join("");
+
+  const popup = new maplibregl.Popup({ closeButton, closeOnClick: closeButton, offset: 12, maxWidth: "260px" })
+    .setLngLat(event.lngLat)
+    .setHTML(`<table class="popup-table">${rows}</table>`)
+    .addTo(map);
+  return popup;
 }
 
 function showSchoolPopup(event) {
