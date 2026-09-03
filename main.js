@@ -15,7 +15,8 @@ const SIGHTINGS_POINT_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 
 const SIGHTINGS_INTERACTION_RADIUS = ["interpolate", ["linear"], ["zoom"], 10, 8, 14, 11, 18, 14];
 
 let map;
-let sightingHandlersInstalled = false;
+let currentBasemap = "streets";
+let sightingHandlersInstalledForStyle = false;
 
 class HomeControl {
   constructor(onClick) {
@@ -74,19 +75,31 @@ async function initializeApp() {
     installSightingsLayer();
   });
 
-  map.on("style.load", installSightingsLayer);
-
   document.querySelectorAll('input[name="basemap"]').forEach((radio) => {
     radio.addEventListener("change", () => {
-      if (radio.checked) map.setStyle(getBasemapStyle(radio.value), { diff: false });
+      if (!radio.checked) return;
+      switchBasemap(radio.value);
     });
   });
 
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
 }
 
+function switchBasemap(nextBasemap) {
+  if (!map || nextBasemap === currentBasemap) return;
+  currentBasemap = nextBasemap;
+  sightingHandlersInstalledForStyle = false;
+  map.setStyle(getBasemapStyle(nextBasemap), { diff: false });
+
+  // Match the working DDRR pattern: after each new basemap style loads,
+  // reinstall local overlay sources/layers and reapply toggle visibility.
+  map.once("style.load", () => {
+    installSightingsLayer();
+    applySightingsVisibility();
+  });
+}
+
 function installSightingsLayer() {
-  if (!map?.isStyleLoaded()) return;
 
   if (!map.getSource(SIGHTINGS_SOURCE_ID)) {
     map.addSource(SIGHTINGS_SOURCE_ID, {
@@ -165,8 +178,8 @@ function installSightingsLayer() {
 }
 
 function installSightingHandlers() {
-  if (sightingHandlersInstalled) return;
-  sightingHandlersInstalled = true;
+  if (sightingHandlersInstalledForStyle || !map.getLayer(SIGHTINGS_HIT_LAYER_ID)) return;
+  sightingHandlersInstalledForStyle = true;
 
   map.on("mouseenter", SIGHTINGS_HIT_LAYER_ID, () => {
     map.getCanvas().style.cursor = "pointer";
