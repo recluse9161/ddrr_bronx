@@ -1,5 +1,5 @@
 :root {
-  --panel-width: 220px;
+  --panel-width: 320px;
   --panel-bg: rgba(255, 255, 255, 0.96);
   --panel-border: rgba(15, 23, 42, 0.18);
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
@@ -217,14 +217,15 @@ body.panel-open .panel-grab-tab {
 }
 
 .search-row {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
 }
 
 .search-row input,
 .search-row button {
-  min-height: 48px;
+  min-height: 52px;
   border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.2);
   font-size: 0.96rem;
@@ -232,12 +233,14 @@ body.panel-open .panel-grab-tab {
 
 .search-row input {
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   padding: 0 14px;
 }
 
 .search-row button {
   width: 100%;
+  box-sizing: border-box;
   padding: 0 14px;
   background: #1d4ed8;
   color: #fff;
