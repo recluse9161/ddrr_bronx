@@ -7,6 +7,12 @@ const BRONX_BOUNDS = [
 const INITIAL_CENTER = [-73.8405, 40.8515];
 const INITIAL_ZOOM = 10.1;
 const FIT_OPTIONS = { padding: 36, duration: 0, maxZoom: 12 };
+const NYC_VIEWBOX = {
+  west: -74.25909,
+  south: 40.4774,
+  east: -73.70018,
+  north: 40.9176,
+};
 const NEIGHBORHOODS_SOURCE_ID = "neighborhoods-source";
 const NEIGHBORHOODS_LABEL_SOURCE_ID = "neighborhoods-label-source";
 const NEIGHBORHOODS_FILL_LAYER_ID = "neighborhoods-fill";
@@ -58,6 +64,9 @@ let sightingHandlersInstalledForStyle = false;
 let schoolHandlersInstalledForStyle = false;
 let subwayHandlersInstalledForStyle = false;
 let subwayHoverPopup = null;
+let searchMarker = null;
+let searchMarkerTimeoutId = null;
+let activeSearchController = null;
 
 class HomeControl {
   constructor(onClick) {
@@ -151,6 +160,7 @@ async function initializeApp() {
   document.getElementById("toggleSubway")?.addEventListener("change", applySubwayVisibility);
   document.getElementById("toggleBridgeLabels")?.addEventListener("change", applyBridgeLabelVisibility);
   setupControlPanelDrawer();
+  setupSearchUI();
 }
 
 function setupControlPanelDrawer() {
@@ -997,6 +1007,111 @@ function installSubwayPopupIconFallbacks(popup) {
       icon.replaceWith(fallback);
     }, { once: true });
   });
+}
+
+function setupSearchUI() {
+  const form = document.getElementById("searchForm");
+  const input = document.getElementById("searchInput");
+  const resultsList = document.getElementById("searchResults");
+  if (!form || !input || !resultsList) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const query = input.value.trim();
+    if (!query) {
+      renderSearchResults([], "Type an address or cross-streets to search.");
+      return;
+    }
+
+    if (activeSearchController) activeSearchController.abort();
+    activeSearchController = new AbortController();
+
+    renderSearchResults([], "Searching...");
+
+    try {
+      const results = await queryNominatim(query, activeSearchController.signal);
+      renderSearchResults(results);
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.error("Search error:", error);
+      renderSearchResults([], "Search failed. Please try again.");
+    }
+  });
+}
+
+async function queryNominatim(query, signal) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "5");
+  // Restrict search results to NYC limits.
+  url.searchParams.set(
+    "viewbox",
+    `${NYC_VIEWBOX.west},${NYC_VIEWBOX.north},${NYC_VIEWBOX.east},${NYC_VIEWBOX.south}`
+  );
+  url.searchParams.set("bounded", "1");
+  url.searchParams.set("countrycodes", "us");
+
+  const response = await fetch(url.toString(), {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) throw new Error(`Nominatim HTTP ${response.status}`);
+  return response.json();
+}
+
+function renderSearchResults(results, message = "") {
+  const resultsList = document.getElementById("searchResults");
+  if (!resultsList) return;
+  resultsList.innerHTML = "";
+
+  if (message) {
+    const li = document.createElement("li");
+    li.textContent = message;
+    resultsList.appendChild(li);
+    return;
+  }
+
+  if (!results.length) {
+    const li = document.createElement("li");
+    li.textContent = "No results found.";
+    resultsList.appendChild(li);
+    return;
+  }
+
+  results.forEach((result) => {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = result.display_name || `${result.lat}, ${result.lon}`;
+    button.addEventListener("click", () => {
+      flyToSearchResult([Number(result.lon), Number(result.lat)]);
+      closeControlPanelOnMobile();
+    });
+    li.appendChild(button);
+    resultsList.appendChild(li);
+  });
+}
+
+function flyToSearchResult([lng, lat]) {
+  if (!map || Number.isNaN(lng) || Number.isNaN(lat)) return;
+
+  map.flyTo({ center: [lng, lat], zoom: 16, essential: true });
+
+  if (searchMarker) searchMarker.remove();
+  searchMarker = new maplibregl.Marker({ color: "#00e5ff" })
+    .setLngLat([lng, lat])
+    .addTo(map);
+
+  if (searchMarkerTimeoutId) clearTimeout(searchMarkerTimeoutId);
+  searchMarkerTimeoutId = setTimeout(() => {
+    if (searchMarker) {
+      searchMarker.remove();
+      searchMarker = null;
+    }
+  }, 120000);
 }
 
 function showSchoolPopup(event) {

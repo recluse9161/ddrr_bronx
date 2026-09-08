@@ -6,7 +6,7 @@
   <meta name="description" content="Interactive MapLibre map centered on the Bronx, New York." />
   <title>DDRR Bronx Map</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <link rel="stylesheet" href="./style.css?v=bridge-name-wrap" />
+  <link rel="stylesheet" href="./style.css?v=bronx-search" />
 </head>
 <body>
   <div id="app">
@@ -64,6 +64,21 @@
           <span>Satellite</span>
         </label>
       </fieldset>
+
+      <section class="panel-section">
+        <h2>Address / Cross-street Search</h2>
+        <form id="searchForm" class="search-form">
+          <label for="searchInput" class="sr-only">Search address or cross-streets</label>
+          <div class="search-row">
+            <input id="searchInput" type="text" placeholder="e.g. Main St & 1st Ave" autocomplete="off" required />
+            <button type="submit">Search</button>
+          </div>
+        </form>
+        <ul id="searchResults" class="search-results" aria-live="polite"></ul>
+        <p class="usage-note">
+          Search uses Nominatim (OpenStreetMap). Please keep requests light and avoid rapid repeated queries.
+        </p>
+      </section>
     </aside>
 
     <button id="panelGrabTab" class="panel-grab-tab" type="button" aria-controls="controlPanel" aria-expanded="false"
@@ -73,6 +88,6 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="./main.js?v=bridge-name-wrap" defer></script>
+  <script src="./main.js?v=bronx-search" defer></script>
 </body>
 </html>
