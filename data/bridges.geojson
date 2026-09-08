@@ -3,6 +3,7 @@
 "name": "bridges",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
 "features": [
+{"type":"Feature","properties":{"id":16,"name":"Bronx-Whitestone","traffic":"vehicle (I-678)","full_name":"Bronx-Whitestone Bridge"},"geometry":{"type":"Point","coordinates":[-73.829551315626134,40.80178868455517]}},
 {"type":"Feature","properties":{"id":1,"name":"Washington","traffic":"vehicle, pedestrian","full_name":"Washington Bridge"},"geometry":{"type":"Point","coordinates":[-73.927806197445747,40.846822786276299]}},
 {"type":"Feature","properties":{"id":2,"name":"Alexander Hamilton","traffic":"vehicle only (I95)","full_name":"Alexander Hamilton Bridge"},"geometry":{"type":"Point","coordinates":[-73.928704434966846,40.845622840012346]}},
 {"type":"Feature","properties":{"id":3,"name":"High Bridge","traffic":"pedestrian","full_name":"High Bridge"},"geometry":{"type":"Point","coordinates":[-73.930511660192124,40.842407816654266]}},
@@ -17,6 +18,7 @@
 {"type":"Feature","properties":{"id":12,"name":"Third Avenue","traffic":"vehicle, pedestrian","full_name":"Third Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.932536875241198,40.807587838972559]}},
 {"type":"Feature","properties":{"id":13,"name":"Willis Avenue","traffic":"vehicle, pedestrian","full_name":"Willis Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.929013204114597,40.803483095446907]}},
 {"type":"Feature","properties":{"id":14,"name":"Triborough","traffic":"vehicle only","full_name":"Triborough Bridge (RFK)"},"geometry":{"type":"Point","coordinates":[-73.919032256340429,40.798904289046483]}},
-{"type":"Feature","properties":{"id":15,"name":"Randall's Island Conn","traffic":"train, pedestrian","full_name":"Randall's Island Connector"},"geometry":{"type":"Point","coordinates":[-73.916277820537644,40.797821026007604]}}
+{"type":"Feature","properties":{"id":15,"name":"Randall's Island Conn","traffic":"train, pedestrian","full_name":"Randall's Island Connector"},"geometry":{"type":"Point","coordinates":[-73.916277820537644,40.797821026007604]}},
+{"type":"Feature","properties":{"id":17,"name":"Throgs Neck","traffic":"Vehicle (I-296)","full_name":"Throgs Neck Bridge"},"geometry":{"type":"Point","coordinates":[-73.793660037655954,40.800370915842784]}}
 ]
 }
