@@ -187,6 +187,17 @@ body.panel-open .panel-grab-tab {
   border: 1px solid #111827;
 }
 
+.legend-line {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 0;
+  border-top: 3px solid #064e3b;
+}
+
+.legend-line-bridges {
+  border-top-color: #064e3b;
+}
+
 .maplibregl-popup-content {
   max-height: 240px;
   overflow: auto;

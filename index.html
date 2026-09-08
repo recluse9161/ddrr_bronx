@@ -6,7 +6,7 @@
   <meta name="description" content="Interactive MapLibre map centered on the Bronx, New York." />
   <title>DDRR Bronx Map</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <link rel="stylesheet" href="./style.css?v=coop-city-label" />
+  <link rel="stylesheet" href="./style.css?v=bridge-names" />
 </head>
 <body>
   <div id="app">
@@ -32,6 +32,11 @@
           <input id="toggleSchools" type="checkbox" />
           <span class="legend-dot legend-dot-schools" aria-hidden="true"></span>
           <span>Schools</span>
+        </label>
+        <label>
+          <input id="toggleBridgeLabels" type="checkbox" checked />
+          <span class="legend-line legend-line-bridges" aria-hidden="true"></span>
+          <span>Bridge names</span>
         </label>
         <div class="touch-row legend-parent-row" role="heading" aria-level="3">
           <label class="legend-parent-label">
@@ -68,6 +73,6 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="./main.js?v=coop-city-label" defer></script>
+  <script src="./main.js?v=bridge-names" defer></script>
 </body>
 </html>

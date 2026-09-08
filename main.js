@@ -16,6 +16,10 @@ const NEIGHBORHOODS_CLICK_FILL_LAYER_ID = "neighborhoods-click-fill";
 // Neighborhood name label size. Edit these zoom stops to make labels larger/smaller.
 const NEIGHBORHOOD_LABEL_TEXT_SIZE = ["interpolate", ["linear"], ["zoom"], 9, 9, 11, 11, 13, 14];
 const NEIGHBORHOOD_LABEL_FONT_STACK = ["Noto Sans Regular"];
+const BRIDGES_SOURCE_ID = "bridges-source";
+const BRIDGES_LABEL_LAYER_ID = "bridges-label";
+const BRIDGE_LABEL_TEXT_SIZE = ["interpolate", ["linear"], ["zoom"], 9, 10, 12, 12, 15, 15];
+const BRIDGE_LABEL_FONT_STACK = ["Noto Sans Regular"];
 const SIGHTINGS_SOURCE_ID = "sightings-source";
 const SIGHTINGS_HEATMAP_LAYER_ID = "confirmed-sightings-heatmap";
 const SIGHTINGS_LAYER_ID = "confirmed-sightings";
@@ -47,6 +51,7 @@ let flashingNeighborhoodName = "";
 let neighborhoodFlashTimeout = null;
 let neighborhoodsData = null;
 let neighborhoodLabelPointsData = null;
+let bridgesData = null;
 let subwayData = null;
 let neighborhoodHandlersInstalledForStyle = false;
 let sightingHandlersInstalledForStyle = false;
@@ -93,6 +98,7 @@ async function initializeApp() {
 
   neighborhoodsData = await loadNeighborhoodsData();
   neighborhoodLabelPointsData = buildNeighborhoodLabelPoints(neighborhoodsData);
+  bridgesData = await loadBridgesData();
   subwayData = await loadSubwayData();
 
   map = new maplibregl.Map({
@@ -113,14 +119,18 @@ async function initializeApp() {
   map.on("load", () => {
     fitToBronx(false);
     installNeighborhoodLayers();
+    installBridgeLabelsLayer();
     installSightingsLayer();
     installSchoolsLayer();
     installSubwayLayer();
     updateNeighborhoodLabelPaint();
+    updateBridgeLabelPaint();
+    applyBridgeLabelVisibility();
     applySubwayVisibility();
     moveSchoolsBelowNeighborhoodLabels();
     moveSubwayBelowNeighborhoodLabels();
     moveSightingsAboveSubway();
+    moveBridgeLabelsBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
   });
 
@@ -139,6 +149,7 @@ async function initializeApp() {
   document.getElementById("toggleSightings")?.addEventListener("change", applySightingsVisibility);
   document.getElementById("toggleSchools")?.addEventListener("change", applySchoolsVisibility);
   document.getElementById("toggleSubway")?.addEventListener("change", applySubwayVisibility);
+  document.getElementById("toggleBridgeLabels")?.addEventListener("change", applyBridgeLabelVisibility);
   setupControlPanelDrawer();
 }
 
@@ -190,6 +201,12 @@ function getNeighborhoodLabelName(name) {
   const label = String(name || "").trim();
   if (label === "Co-op City") return "Co-op\nCity";
   return label.replaceAll("-", "\n");
+}
+
+async function loadBridgesData() {
+  const response = await fetch(`./data/bridges.geojson?v=${Date.now()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Unable to load Bronx bridges: ${response.status}`);
+  return response.json();
 }
 
 async function loadSubwayData() {
@@ -329,6 +346,12 @@ function moveNeighborhoodLabelsToTop() {
   map.moveLayer(NEIGHBORHOODS_LABEL_LAYER_ID);
 }
 
+function moveBridgeLabelsBelowNeighborhoodLabels() {
+  if (!map?.getLayer(BRIDGES_LABEL_LAYER_ID)) return;
+  const beforeLayerId = map.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID) ? NEIGHBORHOODS_LABEL_LAYER_ID : undefined;
+  map.moveLayer(BRIDGES_LABEL_LAYER_ID, beforeLayerId);
+}
+
 function switchBasemap(nextBasemap) {
   if (!map || nextBasemap === currentBasemap) return;
   currentBasemap = nextBasemap;
@@ -344,17 +367,21 @@ function switchBasemap(nextBasemap) {
   // reinstall local overlay sources/layers and reapply toggle visibility.
   map.once("style.load", () => {
     installNeighborhoodLayers();
+    installBridgeLabelsLayer();
     installSightingsLayer();
     installSchoolsLayer();
     installSubwayLayer();
     applyNeighborhoodVisibility();
     applyNeighborhoodLabelVisibility();
+    applyBridgeLabelVisibility();
     updateNeighborhoodLabelPaint();
+    updateBridgeLabelPaint();
     applySightingsVisibility();
     applySchoolsVisibility();
     applySubwayVisibility();
     moveSchoolsBelowNeighborhoodLabels();
     moveSubwayBelowNeighborhoodLabels();
+    moveBridgeLabelsBelowNeighborhoodLabels();
     moveNeighborhoodLabelsToTop();
   });
 }
@@ -449,6 +476,37 @@ function installNeighborhoodLayers() {
   applyNeighborhoodVisibility();
 }
 
+function installBridgeLabelsLayer() {
+  if (!map.getSource(BRIDGES_SOURCE_ID)) {
+    map.addSource(BRIDGES_SOURCE_ID, {
+      type: "geojson",
+      data: bridgesData,
+    });
+  }
+
+  if (!map.getLayer(BRIDGES_LABEL_LAYER_ID)) {
+    map.addLayer({
+      id: BRIDGES_LABEL_LAYER_ID,
+      type: "symbol",
+      source: BRIDGES_SOURCE_ID,
+      layout: {
+        "text-field": ["get", "full_name"],
+        "text-size": BRIDGE_LABEL_TEXT_SIZE,
+        "text-font": BRIDGE_LABEL_FONT_STACK,
+        "text-anchor": "center",
+        "text-offset": [0, -0.6],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+        "text-padding": 2,
+      },
+      paint: getBridgeLabelPaint(),
+    });
+  }
+
+  applyBridgeLabelVisibility();
+  moveBridgeLabelsBelowNeighborhoodLabels();
+}
+
 function installNeighborhoodHandlers() {
   if (neighborhoodHandlersInstalledForStyle || !map.getLayer(NEIGHBORHOODS_CLICK_FILL_LAYER_ID)) return;
   neighborhoodHandlersInstalledForStyle = true;
@@ -496,6 +554,14 @@ function applyNeighborhoodLabelVisibility() {
   }
 }
 
+function applyBridgeLabelVisibility() {
+  if (!map) return;
+  const visibility = document.getElementById("toggleBridgeLabels")?.checked ? "visible" : "none";
+  if (map.getLayer(BRIDGES_LABEL_LAYER_ID)) {
+    map.setLayoutProperty(BRIDGES_LABEL_LAYER_ID, "visibility", visibility);
+  }
+}
+
 function getNeighborhoodLabelPaint() {
   const isSatellite = currentBasemap === "satellite";
   return {
@@ -507,11 +573,30 @@ function getNeighborhoodLabelPaint() {
   };
 }
 
+function getBridgeLabelPaint() {
+  const isSatellite = currentBasemap === "satellite";
+  return {
+    "text-color": isSatellite ? "#ffffff" : "#064e3b",
+    "text-halo-color": isSatellite ? "#000000" : "#ffffff",
+    "text-halo-width": isSatellite ? 1.8 : 2.2,
+    "text-halo-blur": isSatellite ? 0.2 : 0.3,
+    "text-opacity": 1,
+  };
+}
+
 function updateNeighborhoodLabelPaint() {
   if (!map?.getLayer(NEIGHBORHOODS_LABEL_LAYER_ID)) return;
   const paint = getNeighborhoodLabelPaint();
   Object.entries(paint).forEach(([property, value]) => {
     map.setPaintProperty(NEIGHBORHOODS_LABEL_LAYER_ID, property, value);
+  });
+}
+
+function updateBridgeLabelPaint() {
+  if (!map?.getLayer(BRIDGES_LABEL_LAYER_ID)) return;
+  const paint = getBridgeLabelPaint();
+  Object.entries(paint).forEach(([property, value]) => {
+    map.setPaintProperty(BRIDGES_LABEL_LAYER_ID, property, value);
   });
 }
 

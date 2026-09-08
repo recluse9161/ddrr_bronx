@@ -1,0 +1,22 @@
+{
+"type": "FeatureCollection",
+"name": "bridges",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{"type":"Feature","properties":{"id":1,"name":"Washington","traffic":"vehicle, pedestrian","full_name":"Washington Bridge"},"geometry":{"type":"Point","coordinates":[-73.927806197445747,40.846822786276299]}},
+{"type":"Feature","properties":{"id":2,"name":"Alexander Hamilton","traffic":"vehicle only (I95)","full_name":"Alexander Hamilton Bridge"},"geometry":{"type":"Point","coordinates":[-73.928704434966846,40.845622840012346]}},
+{"type":"Feature","properties":{"id":3,"name":"High Bridge","traffic":"pedestrian","full_name":"High Bridge"},"geometry":{"type":"Point","coordinates":[-73.930511660192124,40.842407816654266]}},
+{"type":"Feature","properties":{"id":4,"name":"University Heights","traffic":"vehicle, pedestrian","full_name":"University Heights Bridge"},"geometry":{"type":"Point","coordinates":[-73.914892838615387,40.862797710978171]}},
+{"type":"Feature","properties":{"id":5,"name":"Broadway Bridge","traffic":"vehicle, train, pedestrian","full_name":"Broadway Bridge"},"geometry":{"type":"Point","coordinates":[-73.911103996305698,40.873667708166082]}},
+{"type":"Feature","properties":{"id":6,"name":"Henry Hudson","traffic":"vehicle, pedestrian","full_name":"Henry Hudson Bridge"},"geometry":{"type":"Point","coordinates":[-73.922303298164323,40.877784364331902]}},
+{"type":"Feature","properties":{"id":7,"name":"Spuyten Duyvil","traffic":"train only","full_name":"Spuyten Duyvil Bridge"},"geometry":{"type":"Point","coordinates":[-73.925514019516271,40.878391273995895]}},
+{"type":"Feature","properties":{"id":8,"name":"Macombs Dam","traffic":"vehicle, pedestrian","full_name":"Macombs Dam Bridge"},"geometry":{"type":"Point","coordinates":[-73.933857356065147,40.828140737661208]}},
+{"type":"Feature","properties":{"id":9,"name":"145th Street","traffic":"vehicle, pedestrian","full_name":"145th Street Bridge"},"geometry":{"type":"Point","coordinates":[-73.933112607269379,40.819544847702957]}},
+{"type":"Feature","properties":{"id":10,"name":"Madison Avenue","traffic":"vehicle, pedestrian","full_name":"Madison Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.933159191396143,40.814159872589478]}},
+{"type":"Feature","properties":{"id":11,"name":"Park Avenue","traffic":"train only","full_name":"Park Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.933407042839789,40.81122177170522]}},
+{"type":"Feature","properties":{"id":12,"name":"Third Avenue","traffic":"vehicle, pedestrian","full_name":"Third Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.932536875241198,40.807587838972559]}},
+{"type":"Feature","properties":{"id":13,"name":"Willis Avenue","traffic":"vehicle, pedestrian","full_name":"Willis Avenue Bridge"},"geometry":{"type":"Point","coordinates":[-73.929013204114597,40.803483095446907]}},
+{"type":"Feature","properties":{"id":14,"name":"Triborough","traffic":"vehicle only","full_name":"Triborough Bridge (RFK)"},"geometry":{"type":"Point","coordinates":[-73.919032256340429,40.798904289046483]}},
+{"type":"Feature","properties":{"id":15,"name":"Randall's Island Conn","traffic":"train, pedestrian","full_name":"Randall's Island Connector"},"geometry":{"type":"Point","coordinates":[-73.916277820537644,40.797821026007604]}}
+]
+}
