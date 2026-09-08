@@ -206,7 +206,29 @@ function getNeighborhoodLabelName(name) {
 async function loadBridgesData() {
   const response = await fetch(`./data/bridges.geojson?v=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Unable to load Bronx bridges: ${response.status}`);
-  return response.json();
+  const data = await response.json();
+  return {
+    ...data,
+    features: (data.features || []).map((feature) => {
+      const properties = feature.properties || {};
+      return {
+        ...feature,
+        properties: {
+          ...properties,
+          LabelName: getBridgeLabelName(properties.full_name),
+        },
+      };
+    }),
+  };
+}
+
+function getBridgeLabelName(fullName) {
+  const label = String(fullName || "").trim();
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length >= 3 && words.at(-1) === "Bridge") {
+    return `${words.slice(0, -1).join(" ")}\nBridge`;
+  }
+  return label;
 }
 
 async function loadSubwayData() {
@@ -490,7 +512,7 @@ function installBridgeLabelsLayer() {
       type: "symbol",
       source: BRIDGES_SOURCE_ID,
       layout: {
-        "text-field": ["get", "full_name"],
+        "text-field": ["get", "LabelName"],
         "text-size": BRIDGE_LABEL_TEXT_SIZE,
         "text-font": BRIDGE_LABEL_FONT_STACK,
         "text-anchor": "center",
