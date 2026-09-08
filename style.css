@@ -218,23 +218,26 @@ body.panel-open .panel-grab-tab {
 
 .search-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
 .search-row input,
 .search-row button {
-  min-height: 44px;
+  min-height: 48px;
   border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.2);
   font-size: 0.96rem;
 }
 
 .search-row input {
-  padding: 0 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 14px;
 }
 
 .search-row button {
+  width: 100%;
   padding: 0 14px;
   background: #1d4ed8;
   color: #fff;
