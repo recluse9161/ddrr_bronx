@@ -179,11 +179,17 @@ async function loadNeighborhoodsData() {
         properties: {
           ...properties,
           // Precompute wrapped labels instead of relying on a MapLibre string replace expression.
-          LabelName: name.replaceAll("-", "\n"),
+          LabelName: getNeighborhoodLabelName(name),
         },
       };
     }),
   };
+}
+
+function getNeighborhoodLabelName(name) {
+  const label = String(name || "").trim();
+  if (label === "Co-op City") return "Co-op\nCity";
+  return label.replaceAll("-", "\n");
 }
 
 async function loadSubwayData() {
